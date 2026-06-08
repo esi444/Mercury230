@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_rounded_bg"
+    android:padding="15dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Информация"
+        android:textColor="#FF9800"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginBottom="15dp"
+        android:gravity="center"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Рекомендации:"
+        android:textColor="#FF9800"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• Убедитесь, что смартфон/планшет подключён к правильной Wi-Fi точке досутпа перед чтением показаний из прибора учёта электроэнергии"
+        android:textColor="#cccccc"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp"
+        android:layout_marginBottom="10dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• Для быстрого выбора Wi-Fi точки доступа, используйте кнопку Выбрать Wi-Fi сеть"
+        android:textColor="#cccccc"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp"
+        android:layout_marginBottom="10dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• Рекомендуется отключить функцию автоматического подключения к Wi-Fi точке доступа для чтения показаний из прибора учёта электроэнергии в настройках беспроводных подключений вашего смартфона/планшета"
+        android:textColor="#cccccc"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp"
+        android:layout_marginBottom="15dp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#333333"
+        android:layout_marginBottom="15dp"/>
+
+    <Button
+        android:id="@+id/btnWifiInfoClose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Понятно"
+        android:backgroundTint="#4CAF50"
+        android:padding="12dp"/>
+</LinearLayout>

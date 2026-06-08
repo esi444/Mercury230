@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_rounded_bg"
+    android:padding="15dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ℹ️ Информация"
+        android:textColor="#FF9800"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginBottom="15dp"
+        android:gravity="center"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• Для успешного чтения показаний из прибора учёта, введите в поле Адрес: ваш сетевой адрес прибора учёта и нажмите кнопку Прочитать показания"
+        android:textColor="#cccccc"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp"
+        android:layout_marginBottom="10dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• После успешного чтения показаний не забудьте отключиться от Wi-Fi точки доступа для чтения показаний из прибора учёта электроэнергии"
+        android:textColor="#cccccc"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp"
+        android:layout_marginBottom="10dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• Для настройки подключения IP адреса и порта, нажмите три раза на Адрес:"
+        android:textColor="#cccccc"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp"
+        android:layout_marginBottom="15dp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#333333"
+        android:layout_marginBottom="15dp"/>
+
+    <Button
+        android:id="@+id/btnAddressInfoClose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Понятно"
+        android:backgroundTint="#4CAF50"
+        android:padding="12dp"/>
+</LinearLayout>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@drawable/dialog_rounded_bg">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="⚙️ Добавить/изменить"
+        android:textColor="#FF9800"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginBottom="12dp"
+        android:gravity="center"/>
+
+    <EditText
+        android:id="@+id/etNewSsid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Название Wi-Fi сети (пример: 03-14)"
+        android:textColorHint="#888888"
+        android:textColor="#fff"
+        android:background="#222"
+        android:padding="10dp"
+        android:layout_marginBottom="12dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textSize="14sp"/>
+
+    <Button
+        android:id="@+id/btnSelectNames"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="👥 Выбрать адреса для этой сети"
+        android:backgroundTint="#607D8B"
+        android:textColor="#fff"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- ✅ СПИСОК ВЫБРАННЫХ ИМЁН С ВОЗМОЖНОСТЬЮ УДАЛЕНИЯ -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Прикреплённые адреса:"
+        android:textColor="#aaa"
+        android:textSize="12sp"
+        android:layout_marginBottom="4dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:background="#222"
+        android:padding="8dp"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:id="@+id/llSelectedNamesList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <!-- Сюда будут добавляться имена -->
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ✅ ИСПРАВЛЕНО: Кнопки в одну строку -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnCancelConfig"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="48dp"
+            android:backgroundTint="#607D8B"
+            android:text="❌ Отмена"
+            android:textSize="14sp"
+            android:textColor="#fff"
+            android:layout_marginEnd="5dp"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="none"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnSaveConfig"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="48dp"
+            android:text="✅ Сохранить"
+            android:textSize="14sp"
+            android:textColor="#fff"
+            android:backgroundTint="#4CAF50"
+            android:layout_marginStart="5dp"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="none"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+    </LinearLayout>
+</LinearLayout>

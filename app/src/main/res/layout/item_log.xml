@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#1a1a1a"
+    android:layout_marginBottom="8dp"
+    android:padding="12dp">
+
+    <!-- Цветная полоска статуса (зелёная/красная) -->
+    <View
+        android:id="@+id/colorIndicator"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:background="#4CAF50"
+        android:layout_marginBottom="10dp"/>
+
+    <!-- Основная строка: 3 РАВНЫЕ колонки -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="top">
+
+        <!-- КОЛОНКА 1: Дата + Время -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Дата -->
+            <TextView
+                android:id="@+id/tvDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="29.03.2026"
+                android:textColor="#FFC107"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+
+            <!-- Время (под датой) -->
+            <TextView
+                android:id="@+id/tvTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="22:46:35"
+                android:textColor="#FFC107"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+        </LinearLayout>
+
+        <!-- КОЛОНКА 2: Адрес -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📍"
+                    android:textSize="11sp"
+                    android:layout_marginEnd="2dp"/>
+
+                <TextView
+                    android:id="@+id/tvAddress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="081"
+                    android:textColor="#4CAF50"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    android:maxLines="1"
+                    android:ellipsize="end"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- КОЛОНКА 3: Источник события -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/tvSource"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📊 Показания"
+                android:textColor="#607D8B"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:gravity="end"
+                android:maxLines="2"
+                android:ellipsize="end"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Кнопка Подробнее -->
+    <Button
+        android:id="@+id/btnDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📋 Подробнее"
+        android:textSize="10sp"
+        android:backgroundTint="#607D8B"
+        android:minHeight="32dp"
+        android:layout_marginTop="8dp"/>
+</LinearLayout>

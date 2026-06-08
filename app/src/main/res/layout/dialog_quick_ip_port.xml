@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_rounded_bg"
+    android:padding="15dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Сетевые настройки"
+        android:textColor="#FF9800"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginBottom="15dp"
+        android:gravity="center"/>
+
+    <!-- IP адрес -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="10dp">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="IP адрес:"
+            android:textColor="#4CAF50"
+            android:textStyle="bold"
+            android:layout_gravity="center_vertical"/>
+
+        <EditText
+            android:id="@+id/etQuickIp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="10.10.100.254"
+            android:inputType="text"
+            android:background="#222"
+            android:textColor="#fff"
+            android:padding="10dp"/>
+    </LinearLayout>
+
+    <!-- Порт -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="15dp">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Порт:"
+            android:textColor="#4CAF50"
+            android:textStyle="bold"
+            android:layout_gravity="center_vertical"/>
+
+        <EditText
+            android:id="@+id/etQuickPort"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="8899"
+            android:inputType="number"
+            android:background="#222"
+            android:textColor="#fff"
+            android:padding="10dp"/>
+    </LinearLayout>
+
+    <!-- Кнопки -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnCancelQuick"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Отмена"
+            android:backgroundTint="#607D8B"
+            android:layout_marginEnd="5dp"/>
+
+        <Button
+            android:id="@+id/btnSaveQuick"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Сохранить"
+            android:backgroundTint="#2196F3"
+            android:layout_marginStart="5dp"/>
+    </LinearLayout>
+</LinearLayout>

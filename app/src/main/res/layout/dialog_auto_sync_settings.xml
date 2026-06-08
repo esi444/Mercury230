@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_rounded_bg"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="⏰ Авто-синхронизация"
+        android:textColor="#2196F3"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Автоматическая синхронизация показаний"
+        android:textColor="#888888"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🕐"
+            android:textSize="24sp"
+            android:layout_marginEnd="12dp"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Время синхронизации:"
+                android:textColor="#888888"
+                android:textSize="12sp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <EditText
+                    android:id="@+id/etSyncHour"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:background="#222"
+                    android:textColor="#fff"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:padding="12dp"
+                    android:gravity="center"
+                    android:text="16"
+                    android:maxLength="2"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=":"
+                    android:textColor="#fff"
+                    android:textSize="18sp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"/>
+
+                <EditText
+                    android:id="@+id/etSyncMinute"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:background="#222"
+                    android:textColor="#fff"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:padding="12dp"
+                    android:gravity="center"
+                    android:text="00"
+                    android:maxLength="2"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="15dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Периодичность:"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:layout_marginBottom="8dp"/>
+
+        <RadioGroup
+            android:id="@+id/rgSyncPeriod"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbDaily"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📅 Раз в сутки"
+                android:textColor="#fff"
+                android:checked="true"/>
+
+            <RadioButton
+                android:id="@+id/rbTwiceDaily"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=" 2 раза в сутки (12 часов)"
+                android:textColor="#fff"/>
+
+            <RadioButton
+                android:id="@+id/rbEvery6Hours"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📅 Каждые 6 часов"
+                android:textColor="#fff"/>
+        </RadioGroup>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnCancelAutoSync"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="❌ Отмена"
+            android:backgroundTint="#607D8B"
+            android:layout_marginEnd="5dp"/>
+
+        <Button
+            android:id="@+id/btnSaveAutoSync"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="✅ Сохранить"
+            android:backgroundTint="#2196F3"
+            android:layout_marginStart="5dp"/>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#1a1a1a"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📊 Показания счётчика"
+        android:textColor="#607D8B"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+        <TextView
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:text="📅 Дата:"
+            android:textColor="#888888"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/bottomDate"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="16.03.2026 08:37"
+            android:textColor="#FFC107"
+            android:textStyle="bold"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+        <TextView
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:text="🔢 Серийник:"
+            android:textColor="#888888"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/bottomSerial"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="48253981"
+            android:textColor="#607D8B"
+            android:textStyle="bold"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+        <TextView
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:text="📍 Сетевой адрес:"
+            android:textColor="#888888"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/bottomAddr"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="081"
+            android:textColor="#4CAF50"
+            android:textStyle="bold"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <!-- ✅ НОВОЕ: Поле Имя -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+        <TextView
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:text="👤 Адрес:"
+            android:textColor="#888888"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/bottomName"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textColor="#607D8B"
+            android:textStyle="bold"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#333333"
+        android:layout_marginBottom="12dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="☀️ Тариф 1:"
+            android:textColor="#888888"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/bottomT1"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="3.99 кВт⋅ч"
+            android:textColor="#FFA726"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:gravity="end"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="🌙 Тариф 2:"
+            android:textColor="#888888"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/bottomT2"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="0.14 кВт⋅ч"
+            android:textColor="#7986CB"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:gravity="end"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="20dp">
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="💡 Сумма:"
+            android:textColor="#888888"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/bottomTotal"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="4.13 кВт⋅ч"
+            android:textColor="#66BB6A"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:gravity="end"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/bottomCopy"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="48dp"
+            android:text="📋 Копировать"
+            android:backgroundTint="#607D8B"
+            android:layout_marginEnd="5dp"
+            android:minHeight="48dp"/>
+
+        <Button
+            android:id="@+id/bottomClose"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="48dp"
+            android:text="✕ Закрыть"
+            android:backgroundTint="#4CAF50"
+            android:layout_marginStart="5dp"
+            android:minHeight="48dp"/>
+    </LinearLayout>
+</LinearLayout>

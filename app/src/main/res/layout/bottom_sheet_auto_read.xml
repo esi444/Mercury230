@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#121212"
+    android:orientation="vertical"
+    app:behavior_peekHeight="500dp"
+    style="@style/Widget.MaterialComponents.BottomSheet.Modal">
+
+    <!-- Заголовок + 3 кнопки -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:background="#1a1a1a">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="📡 Список сетей"
+            android:textColor="#fff"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
+
+        <!-- 1. Сортировка -->
+        <ImageButton
+            android:id="@+id/btnSort"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            android:contentDescription="Сортировка"
+            app:tint="#4CAF50"
+            android:layout_marginEnd="8dp"/>
+
+        <!-- 2. Настройки интервала -->
+        <ImageButton
+            android:id="@+id/btnSettings"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_preferences"
+            android:contentDescription="Настройки"
+            app:tint="#FF9800"
+            android:layout_marginEnd="8dp"/>
+
+        <!-- 3. Добавить -->
+        <ImageButton
+            android:id="@+id/btnAdd"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_add"
+            android:contentDescription="Добавить"
+            app:tint="#4CAF50"/>
+    </LinearLayout>
+
+    <!-- Список сетей -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvNetworks"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="600dp"
+        android:padding="8dp"
+        android:clipToPadding="false"/>
+</LinearLayout>

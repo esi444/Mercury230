@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Разрешить HTTP для всех доменов -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Или только для вашего домена -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">a96497eh.beget.tech</domain>
+        <domain includeSubdomains="true">beget.tech</domain>
+    </domain-config>
+</network-security-config>
