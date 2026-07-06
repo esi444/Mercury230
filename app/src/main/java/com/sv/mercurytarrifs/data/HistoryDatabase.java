@@ -1,16 +1,18 @@
 package com.sv.mercurytarrifs.data;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class HistoryDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "history.db";
-    private static final int DATABASE_VERSION = 4; // ✅ Увеличена версия для новых таблиц
+    private static final int DATABASE_VERSION = 5; // ✅ Увеличена версия до 5
 
     private static final String TABLE_HISTORY = "history";
     private static final String COLUMN_ID = "id";
@@ -23,7 +25,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
     private static final String COLUMN_SYNCED = "synced";
     private static final String COLUMN_CUSTOM_NAME = "custom_name";
 
-    // ✅ НОВЫЕ: Таблицы для автосчитывания
+    // ✅ Таблицы для автосчитывания
     private static final String TABLE_AUTO_READ_CONFIG = "auto_read_config";
     private static final String TABLE_AUTO_READ_NAMES = "auto_read_names";
 
@@ -45,16 +47,17 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                 COLUMN_CUSTOM_NAME + " TEXT DEFAULT '—' " +
                 ")");
 
-        // ✅ НОВЫЕ: Таблицы для автосчитывания
         db.execSQL("CREATE TABLE " + TABLE_AUTO_READ_CONFIG + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "wifi_ssid TEXT NOT NULL UNIQUE, " +
                 "is_enabled INTEGER DEFAULT 1, " +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 
+        // ✅ НОВАЯ СТРУКТУРА: с полем address
         db.execSQL("CREATE TABLE " + TABLE_AUTO_READ_NAMES + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "config_id INTEGER, " +
+                "address INTEGER NOT NULL, " +
                 "custom_name TEXT NOT NULL, " +
                 "read_order INTEGER, " +
                 "FOREIGN KEY (config_id) REFERENCES " + TABLE_AUTO_READ_CONFIG + "(id))");
@@ -68,7 +71,6 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         if (oldVersion < 3) {
             db.execSQL("ALTER TABLE " + TABLE_HISTORY + " ADD COLUMN " + COLUMN_CUSTOM_NAME + " TEXT DEFAULT '—'");
         }
-        // ✅ НОВЫЕ: Таблицы для автосчитывания (версия 4)
         if (oldVersion < 4) {
             db.execSQL("CREATE TABLE " + TABLE_AUTO_READ_CONFIG + " (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -81,6 +83,32 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                     "custom_name TEXT NOT NULL, " +
                     "read_order INTEGER, " +
                     "FOREIGN KEY (config_id) REFERENCES " + TABLE_AUTO_READ_CONFIG + "(id))");
+        }
+        // ✅ МИГРАЦИЯ ВЕРСИИ 5: добавляем поле address
+        if (oldVersion < 5) {
+            // Пересоздаём таблицу с новым полем
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_AUTO_READ_NAMES + "_backup");
+            db.execSQL("ALTER TABLE " + TABLE_AUTO_READ_NAMES + " RENAME TO " + TABLE_AUTO_READ_NAMES + "_backup");
+
+            db.execSQL("CREATE TABLE " + TABLE_AUTO_READ_NAMES + " (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "config_id INTEGER, " +
+                    "address INTEGER NOT NULL DEFAULT 1, " +
+                    "custom_name TEXT NOT NULL, " +
+                    "read_order INTEGER, " +
+                    "FOREIGN KEY (config_id) REFERENCES " + TABLE_AUTO_READ_CONFIG + "(id))");
+
+            // Копируем данные из старой таблицы, пытаясь извлечь адрес из имени
+            db.execSQL("INSERT INTO " + TABLE_AUTO_READ_NAMES + " (id, config_id, address, custom_name, read_order) " +
+                    "SELECT id, config_id, " +
+                    "CASE " +
+                    "  WHEN custom_name GLOB '*[0-9]*' THEN CAST(REPLACE(REPLACE(custom_name, '/', ''), '(', '') AS INTEGER) " +
+                    "  ELSE 1 " +
+                    "END, " +
+                    "custom_name, read_order " +
+                    "FROM " + TABLE_AUTO_READ_NAMES + "_backup");
+
+            db.execSQL("DROP TABLE " + TABLE_AUTO_READ_NAMES + "_backup");
         }
     }
 
@@ -199,8 +227,9 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return list;
     }
 
-    // ✅ НОВЫЕ: Методы для автосчитывания
-    public void addAutoReadConfig(String ssid, List<String> names) {
+    // ✅ НОВЫЕ МЕТОДЫ ДЛЯ АВТОСЧИТЫВАНИЯ (с адресом)
+
+    public void addAutoReadConfig(String ssid, List<AddressNamePair> addressNames) {
         SQLiteDatabase db = this.getWritableDatabase();
         try {
             db.beginTransaction();
@@ -209,10 +238,13 @@ public class HistoryDatabase extends SQLiteOpenHelper {
             configValues.put("wifi_ssid", ssid);
             configValues.put("is_enabled", 1);
             long configId = db.insert(TABLE_AUTO_READ_CONFIG, null, configValues);
-            for (int i = 0; i < names.size(); i++) {
+
+            for (int i = 0; i < addressNames.size(); i++) {
+                AddressNamePair pair = addressNames.get(i);
                 ContentValues nameValues = new ContentValues();
                 nameValues.put("config_id", configId);
-                nameValues.put("custom_name", names.get(i));
+                nameValues.put("address", pair.address);
+                nameValues.put("custom_name", pair.name);
                 nameValues.put("read_order", i);
                 db.insert(TABLE_AUTO_READ_NAMES, null, nameValues);
             }
@@ -223,20 +255,33 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
-    public List<String> getNamesForSsid(String ssid) {
+    // ✅ НОВЫЙ МЕТОД: возвращает пары (адрес, имя)
+    public List<AddressNamePair> getAddressNamesForSsid(String ssid) {
         SQLiteDatabase db = this.getReadableDatabase();
-        List<String> names = new ArrayList<>();
-        String query = "SELECT n.custom_name FROM " + TABLE_AUTO_READ_NAMES + " n " +
+        List<AddressNamePair> pairs = new ArrayList<>();
+        String query = "SELECT n.address, n.custom_name FROM " + TABLE_AUTO_READ_NAMES + " n " +
                 "JOIN " + TABLE_AUTO_READ_CONFIG + " c ON n.config_id = c.id " +
                 "WHERE c.wifi_ssid = ? ORDER BY n.read_order";
         Cursor cursor = db.rawQuery(query, new String[]{ssid});
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                names.add(cursor.getString(0));
+                int address = cursor.getInt(0);
+                String name = cursor.getString(1);
+                pairs.add(new AddressNamePair(address, name));
             }
             cursor.close();
         }
         db.close();
+        return pairs;
+    }
+
+    // ✅ СТАРЫЙ МЕТОД (для обратной совместимости) - возвращает только имена
+    public List<String> getNamesForSsid(String ssid) {
+        List<AddressNamePair> pairs = getAddressNamesForSsid(ssid);
+        List<String> names = new ArrayList<>();
+        for (AddressNamePair pair : pairs) {
+            names.add(pair.name);
+        }
         return names;
     }
 

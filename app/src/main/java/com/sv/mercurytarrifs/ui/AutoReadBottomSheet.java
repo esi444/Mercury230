@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.sv.mercurytarrifs.R;
+import com.sv.mercurytarrifs.data.AddressNamePair;
 import com.sv.mercurytarrifs.data.HistoryDatabase;
 import com.sv.mercurytarrifs.prefs.AppPreferences;
 import com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem;
@@ -39,13 +40,11 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
     private ImageButton btnSort;
     private ImageButton btnSettings;
     private ImageButton btnAdd;
-
     private AutoReadNetworkAdapter adapter;
     private List<AutoReadNetworkItem> networkList;
     private HistoryDatabase dbHelper;
     private AppPreferences prefs;
     private boolean isAscending = true;
-
     private OnNetworkSelectedListener listener;
 
     public interface OnNetworkSelectedListener {
@@ -64,6 +63,7 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
 
         dbHelper = new HistoryDatabase(requireContext());
         prefs = new AppPreferences(requireContext());
+
         networkList = new ArrayList<>();
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -81,7 +81,6 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         });
 
         btnSettings.setOnClickListener(v -> showIntervalSettings());
-
         btnAdd.setOnClickListener(v -> showAddDialog(null));
 
         return view;
@@ -95,8 +94,8 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         List<String> ssids = dbHelper.getAllConfiguredSsids();
         networkList.clear();
         for (String ssid : ssids) {
-            List<String> names = dbHelper.getNamesForSsid(ssid);
-            networkList.add(new AutoReadNetworkItem(ssid, names));
+            List<AddressNamePair> pairs = dbHelper.getAddressNamesForSsid(ssid);
+            networkList.add(new AutoReadNetworkItem(ssid, pairs));
         }
         sortList();
     }
@@ -145,7 +144,6 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         }
     }
 
-    // ✅ НОВОЕ: Диалог настроек интервала (красивый, закруглённый)
     private void showIntervalSettings() {
         if (!isAdded() || getContext() == null) return;
 
@@ -160,11 +158,9 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         Button btnCancel = dialogView.findViewById(R.id.btnCancelInterval);
         Button btnSave = dialogView.findViewById(R.id.btnSaveInterval);
 
-        // ✅ Загружаем текущее значение
         int currentInterval = prefs.getAutoReadInterval();
         etInterval.setText(String.valueOf(currentInterval));
 
-        // ✅ Предустановки
         btnPreset100.setOnClickListener(v -> etInterval.setText("100"));
         btnPreset200.setOnClickListener(v -> etInterval.setText("200"));
         btnPreset500.setOnClickListener(v -> etInterval.setText("500"));
@@ -172,7 +168,6 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         AlertDialog dialog = builder.create();
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
-
         btnSave.setOnClickListener(v -> {
             try {
                 int newInterval = Integer.parseInt(etInterval.getText().toString().trim());
@@ -188,16 +183,13 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
             }
         });
 
-        // ✅ Делаем фон прозрачным для показа закруглений
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
-
         dialog.setCanceledOnTouchOutside(true);
         dialog.show();
     }
 
-    // ✅ ДИЗАЛОГ ДОБАВЛЕНИЯ/РЕДАКТИРОВАНИЯ
     private void showAddDialog(String existingSsid) {
         if (!isAdded() || getContext() == null) return;
 
@@ -212,33 +204,42 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         Button btnSave = dialogView.findViewById(R.id.btnSaveConfig);
 
         boolean isEdit = existingSsid != null;
-        List<String> selectedNames = new ArrayList<>();
+        List<AddressNamePair> selectedPairs = new ArrayList<>();
 
         if (isEdit) {
             etNewSsid.setText(existingSsid);
             etNewSsid.setEnabled(false);
             etNewSsid.setTextColor(0xFF888888);
-            selectedNames.addAll(dbHelper.getNamesForSsid(existingSsid));
+            selectedPairs.addAll(dbHelper.getAddressNamesForSsid(existingSsid));
         } else {
             etNewSsid.setText("");
             etNewSsid.setEnabled(true);
             etNewSsid.setTextColor(0xFFFFFFFF);
         }
 
-        // ✅ Первая отрисовка списка
-        updateNamesListUI(llSelectedNamesList, selectedNames);
+        updateNamesListUI(llSelectedNamesList, selectedPairs);
 
         btnSelectNames.setOnClickListener(v -> {
             if (!isAdded()) return;
+
             AddressBottomSheet addressSheet = new AddressBottomSheet();
             addressSheet.setOnAddressSelectedListener(address -> {
                 if (!isAdded()) return;
+
                 List<AddressItem> items = dbHelper.getAddressBook();
                 for (AddressItem item : items) {
                     if (item.address == address && item.name != null && !item.name.equals("—")) {
-                        if (!selectedNames.contains(item.name)) {
-                            selectedNames.add(item.name);
-                            updateNamesListUI(llSelectedNamesList, selectedNames);
+                        // ✅ Проверяем, не добавлен ли уже этот адрес
+                        boolean alreadyAdded = false;
+                        for (AddressNamePair pair : selectedPairs) {
+                            if (pair.address == address) {
+                                alreadyAdded = true;
+                                break;
+                            }
+                        }
+                        if (!alreadyAdded) {
+                            selectedPairs.add(new AddressNamePair(address, item.name));
+                            updateNamesListUI(llSelectedNamesList, selectedPairs);
                         }
                         break;
                     }
@@ -254,23 +255,21 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         }
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
-
         btnSave.setOnClickListener(v -> {
             if (!isAdded()) return;
 
             String ssid = etNewSsid.getText().toString().trim();
-
             if (ssid.isEmpty()) {
                 Toast.makeText(requireContext(), "⚠️ Введите название сети", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (selectedNames.isEmpty()) {
-                Toast.makeText(requireContext(), "⚠️ Выберите хотя бы одно имя", Toast.LENGTH_SHORT).show();
+            if (selectedPairs.isEmpty()) {
+                Toast.makeText(requireContext(), "⚠️ Выберите хотя бы один счётчик", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             try {
-                dbHelper.addAutoReadConfig(ssid, selectedNames);
+                dbHelper.addAutoReadConfig(ssid, selectedPairs);
                 loadNetworks();
                 adapter.notifyDataSetChanged();
                 Toast.makeText(requireContext(), isEdit ? "✅ Обновлено: " + ssid : "✅ Добавлено: " + ssid, Toast.LENGTH_SHORT).show();
@@ -284,10 +283,11 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         dialog.show();
     }
 
-    // ✅ ВСПОМОГАТЕЛЬНЫЙ МЕТОД ДЛЯ ОТРИСОВКИ СПИСКА ИМЁН (исправляет ошибку компилятора)
-    private void updateNamesListUI(LinearLayout container, List<String> names) {
+    // ✅ НОВЫЙ МЕТОД: отрисовка списка пар (адрес + имя)
+    private void updateNamesListUI(LinearLayout container, List<AddressNamePair> pairs) {
         container.removeAllViews();
-        if (names.isEmpty()) {
+
+        if (pairs.isEmpty()) {
             TextView tvEmpty = new TextView(requireContext());
             tvEmpty.setText("— пусто —");
             tvEmpty.setTextColor(0xFF666666);
@@ -295,14 +295,15 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
             tvEmpty.setPadding(0, 20, 0, 20);
             container.addView(tvEmpty);
         } else {
-            for (String name : names) {
+            for (AddressNamePair pair : pairs) {
                 LinearLayout row = new LinearLayout(requireContext());
                 row.setOrientation(LinearLayout.HORIZONTAL);
                 row.setGravity(Gravity.CENTER_VERTICAL);
                 row.setPadding(10, 10, 10, 10);
 
+                // ✅ Имя + адрес
                 TextView tvName = new TextView(requireContext());
-                tvName.setText(name);
+                tvName.setText(pair.name + " (адрес: " + pair.address + ")");
                 tvName.setTextColor(0xFF4CAF50);
                 tvName.setTextSize(14);
                 LinearLayout.LayoutParams paramsName = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
@@ -313,10 +314,9 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
                 btnRemove.setBackgroundColor(Color.TRANSPARENT);
                 btnRemove.setColorFilter(0xFFF44336);
                 btnRemove.setPadding(10, 10, 10, 10);
-
                 btnRemove.setOnClickListener(v -> {
-                    names.remove(name);
-                    updateNamesListUI(container, names);
+                    pairs.remove(pair);
+                    updateNamesListUI(container, pairs);
                 });
 
                 row.addView(tvName);
@@ -326,13 +326,14 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         }
     }
 
+    // ✅ ИЗМЕНЁННЫЙ класс элемента списка
     public static class AutoReadNetworkItem {
         public String ssid;
-        public List<String> names;
+        public List<AddressNamePair> pairs; // ✅ Теперь хранит пары
 
-        public AutoReadNetworkItem(String ssid, List<String> names) {
+        public AutoReadNetworkItem(String ssid, List<AddressNamePair> pairs) {
             this.ssid = ssid;
-            this.names = names != null ? names : new ArrayList<>();
+            this.pairs = pairs != null ? pairs : new ArrayList<>();
         }
     }
 
@@ -364,13 +365,19 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             AutoReadNetworkItem item = items.get(position);
             holder.tvSsid.setText(item.ssid);
-            holder.tvNames.setText(item.names.isEmpty() ? "—" : String.join(", ", item.names));
-            holder.tvCount.setText("К сети прикреплено: " + item.names.size() + " адр.");
+
+            // ✅ Формируем строку из пар
+            StringBuilder namesStr = new StringBuilder();
+            for (AddressNamePair pair : item.pairs) {
+                if (namesStr.length() > 0) namesStr.append(", ");
+                namesStr.append(pair.name).append(" (").append(pair.address).append(")");
+            }
+            holder.tvNames.setText(item.pairs.isEmpty() ? "—" : namesStr.toString());
+            holder.tvCount.setText("К сети прикреплено: " + item.pairs.size() + " адр.");
 
             holder.itemView.setOnClickListener(v -> {
                 if (onItemClickListener != null) onItemClickListener.onItemClick(item);
             });
-
             holder.btnDelete.setOnClickListener(v -> {
                 if (onDeleteClickListener != null) onDeleteClickListener.onDeleteClick(item);
             });
