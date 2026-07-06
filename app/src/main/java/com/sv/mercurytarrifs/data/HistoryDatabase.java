@@ -147,12 +147,12 @@ public class HistoryDatabase extends SQLiteOpenHelper {
             selectionArgs = new String[]{filterSerial};
         }
 
-        return db.query(TABLE_HISTORY, null, selection, selectionArgs, null, null, COLUMN_DATETIME + " DESC");
+        return db.query(TABLE_HISTORY, null, selection, selectionArgs, null, null, COLUMN_ID + " DESC");
     }
 
     public Cursor getUnsyncedHistory() {
         SQLiteDatabase db = this.getReadableDatabase();
-        return db.query(TABLE_HISTORY, null, COLUMN_SYNCED + " = ?", new String[]{"0"}, null, null, COLUMN_DATETIME + " ASC");
+        return db.query(TABLE_HISTORY, null, COLUMN_SYNCED + " = ?", new String[]{"0"}, null, null, COLUMN_ID + " ASC");
     }
 
     public void markAsSynced(int id) {
