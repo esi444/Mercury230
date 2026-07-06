@@ -203,10 +203,6 @@ public class ReadingManager {
     private void saveToHistory(int addr, long serial, double t1, double t2, double total) {
         String datetime = DateTimeUtils.formatDateTimeWithSeconds(new java.util.Date());
         dbHelper.addHistory(addr, serial, datetime, t1, t2, total);
-
-        activity.runOnUiThread(() ->
-                Toast.makeText(activity, "💾 Сохранено: addr=" + addr + " T1=" + t1, Toast.LENGTH_SHORT).show()
-        );
     }
 
     private String bytesToHex(byte[] bytes) {

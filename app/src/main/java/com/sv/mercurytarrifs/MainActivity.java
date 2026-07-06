@@ -991,7 +991,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    private void loadHistoryWithFilter() {
+    public void loadHistoryWithFilter() {
         String filterAddr = etFilterAddr.getText().toString().trim();
         String filterDate = etFilterDate.getText().toString().trim();
         String filterSerial = etFilterSerial.getText().toString().trim();

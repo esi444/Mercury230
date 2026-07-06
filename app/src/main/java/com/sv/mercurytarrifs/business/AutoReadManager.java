@@ -47,8 +47,10 @@ public class AutoReadManager {
         if (ssid == null || ssid.isEmpty()) return;
         if (isReading && currentSsid != null && currentSsid.equals(ssid)) return;
         if (isReading && (currentSsid == null || !currentSsid.equals(ssid))) stopReading();
+
         List<String> names = dbHelper.getNamesForSsid(ssid);
         if (names == null || names.isEmpty()) return;
+
         startReading(ssid, names);
     }
 
@@ -65,6 +67,7 @@ public class AutoReadManager {
         logManager.logMsg("📋 Адреса для чтения: " + String.join(", ", names));
         logManager.logMsg("⏱️ Интервал: " + prefs.getAutoReadInterval() + " мс");
         logManager.logMsg("═══════════════════════════════════════════");
+
         readNextName();
     }
 
@@ -82,16 +85,16 @@ public class AutoReadManager {
         readingManager.readEnergy(prefs.getIp(), prefs.getPort(), address, new Runnable() {
             @Override
             public void run() {
-                if (readingManager.getCurrentSerial() > 0) {
-                    // ✅ Получаем показания сразу после чтения
-                    double t1 = readingManager.getCurrentT1();
-                    double t2 = readingManager.getCurrentT2();
-                    double total = readingManager.getCurrentTotal();
-                    long serial = readingManager.getCurrentSerial();
+                // ✅ ВАЖНО: Получаем показания СРАЗУ после чтения, пока они не перезаписались
+                final double t1 = readingManager.getCurrentT1();
+                final double t2 = readingManager.getCurrentT2();
+                final double total = readingManager.getCurrentTotal();
+                final long serial = readingManager.getCurrentSerial();
 
+                if (serial > 0) {
                     successNames.append(successNames.length() > 0 ? " | " : "").append(name);
 
-                    // ✅ Подробный лог с показаниями
+                    // ✅ Подробный лог с показаниями ИМЕННО ЭТОГО адреса
                     logManager.logMsg("✅ Прочитано: " + name);
                     logManager.logMsg("   📊 T1: " + String.format("%.2f", t1) + " кВт⋅ч");
                     logManager.logMsg("   📊 T2: " + String.format("%.2f", t2) + " кВт⋅ч");
@@ -112,6 +115,10 @@ public class AutoReadManager {
 
     private void finishReading() {
         isReading = false;
+
+        // ✅ Автоматически обновляем историю после автосчитывания
+        activity.loadHistoryWithFilter();
+
         mainHandler.post(() -> {
             StringBuilder toastMsg = new StringBuilder();
             if (successNames.length() > 0) toastMsg.append("✅ Прочитаны адреса: ").append(successNames);
@@ -121,6 +128,7 @@ public class AutoReadManager {
             }
             if (toastMsg.length() > 0) Toast.makeText(context, toastMsg.toString(), Toast.LENGTH_LONG).show();
         });
+
         logManager.logMsg("═══════════════════════════════════════════");
         logManager.logMsg("✅ Автосчитывание завершено");
         if (successNames.length() > 0) logManager.logMsg("   Успешно: " + successNames);

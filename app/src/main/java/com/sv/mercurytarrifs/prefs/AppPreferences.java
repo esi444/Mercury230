@@ -8,7 +8,6 @@ public class AppPreferences {
     private static final String KEY_IP = "ip";
     private static final String KEY_PORT = "port";
     private static final String KEY_ADDRESS = "address";
-    private static final String KEY_TIME_PASSWORD = "time_password";
     private static final String KEY_SERVER_URL = "server_url";
     private static final String KEY_API_PATH = "api_path";
     private static final String KEY_TEST_URL = "test_url";
@@ -41,7 +40,6 @@ public class AppPreferences {
     private static final String DEFAULT_IP = "10.10.100.254";
     private static final int DEFAULT_PORT = 8899;
     private static final int DEFAULT_ADDRESS = 1;
-    private static final String DEFAULT_TIME_PASSWORD = "111111";
     private static final String DEFAULT_SERVER_URL = "http://a96497eh.beget.tech";
     private static final String DEFAULT_API_PATH = "/pokaz/api/save_reading.php";
     private static final String DEFAULT_TEST_URL = "/pokaz/api/test.php";
@@ -62,9 +60,6 @@ public class AppPreferences {
 
     public int getAddress() { return prefs.getInt(KEY_ADDRESS, DEFAULT_ADDRESS); }
     public void setAddress(int address) { prefs.edit().putInt(KEY_ADDRESS, address).apply(); }
-
-    public String getTimePassword() { return prefs.getString(KEY_TIME_PASSWORD, DEFAULT_TIME_PASSWORD); }
-    public void setTimePassword(String password) { prefs.edit().putString(KEY_TIME_PASSWORD, password).apply(); }
 
     public String getServerUrl() { return prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL); }
     public void setServerUrl(String url) { prefs.edit().putString(KEY_SERVER_URL, url).apply(); }
