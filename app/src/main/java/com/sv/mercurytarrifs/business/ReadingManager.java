@@ -201,7 +201,8 @@ public class ReadingManager {
     }
 
     private void saveToHistory(int addr, long serial, double t1, double t2, double total) {
-        String datetime = DateTimeUtils.formatDateTimeWithSeconds(new java.util.Date());
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+        String datetime = sdf.format(new java.util.Date());
         dbHelper.addHistory(addr, serial, datetime, t1, t2, total);
     }
 
