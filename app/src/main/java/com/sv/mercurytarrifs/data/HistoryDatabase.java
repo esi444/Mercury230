@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class HistoryDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "history.db";
-    private static final int DATABASE_VERSION = 5; // ✅ Увеличена версия до 5
+    private static final int DATABASE_VERSION = 5;
 
     private static final String TABLE_HISTORY = "history";
     private static final String COLUMN_ID = "id";
