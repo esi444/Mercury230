@@ -26,7 +26,7 @@ public class AutoReadManager {
 
     private boolean isReading = false;
     private String currentSsid = null;
-    private List<AddressNamePair> itemsToRead; // ✅ Теперь хранит пары (адрес, имя)
+    private List<AddressNamePair> itemsToRead;
     private int currentIndex = 0;
     private final StringBuilder successNames = new StringBuilder();
     private final StringBuilder failNames = new StringBuilder();
@@ -49,7 +49,6 @@ public class AutoReadManager {
         if (isReading && currentSsid != null && currentSsid.equals(ssid)) return;
         if (isReading && (currentSsid == null || !currentSsid.equals(ssid))) stopReading();
 
-        // ✅ НОВЫЙ МЕТОД: получаем пары (адрес, имя)
         List<AddressNamePair> pairs = dbHelper.getAddressNamesForSsid(ssid);
         if (pairs == null || pairs.isEmpty()) return;
 
@@ -64,19 +63,7 @@ public class AutoReadManager {
         successNames.setLength(0);
         failNames.setLength(0);
 
-        logManager.logMsg("═══════════════════════════════════════════");
-        logManager.logMsg("🤖 АВТОСЧИТЫВАНИЕ: Подключено к \"" + ssid + "\"");
-
-        // ✅ Логируем адреса для чтения
-        StringBuilder namesLog = new StringBuilder();
-        for (AddressNamePair pair : pairs) {
-            if (namesLog.length() > 0) namesLog.append(", ");
-            namesLog.append(pair.name).append(" (адр. ").append(pair.address).append(")");
-        }
-        logManager.logMsg("📋 Счётчики для чтения: " + namesLog.toString());
-        logManager.logMsg("⏱️ Интервал: " + prefs.getAutoReadInterval() + " мс");
-        logManager.logMsg("═══════════════════════════════════════════");
-
+        // ✅ Убрано детальное логирование — только начало процесса
         readNextItem();
     }
 
@@ -87,25 +74,18 @@ public class AutoReadManager {
         }
 
         final AddressNamePair item = itemsToRead.get(currentIndex);
-        final int address = item.address; // ✅ Адрес берём напрямую из БД!
+        final int address = item.address;
         final String name = item.name;
 
-        logManager.logMsg("🔄 Авто-чтение #" + (currentIndex + 1) + "/" + itemsToRead.size() +
-                ": " + name + " (адрес: " + address + ")");
+        // ✅ Убрано логирование каждого чтения
 
         readingManager.readEnergy(prefs.getIp(), prefs.getPort(), address, new Runnable() {
             @Override
             public void run() {
                 if (readingManager.getCurrentSerial() > 0) {
                     successNames.append(successNames.length() > 0 ? " | " : "").append(name);
-                    logManager.logMsg("✅ Прочитано: " + name);
-                    logManager.logMsg("   🔢 Серийник: " + readingManager.getCurrentSerial());
-                    logManager.logMsg("   📊 T1: " + String.format("%.2f", readingManager.getCurrentT1()) + " кВт⋅ч");
-                    logManager.logMsg("   📊 T2: " + String.format("%.2f", readingManager.getCurrentT2()) + " кВт⋅ч");
-                    logManager.logMsg("   📊 Σ: " + String.format("%.2f", readingManager.getCurrentTotal()) + " кВт⋅ч");
                 } else {
                     failNames.append(failNames.length() > 0 ? " | " : "").append(name);
-                    logManager.logMsg("❌ Не прочитано: " + name);
                     mainHandler.post(() -> Toast.makeText(context, "⚠️ Не прочитаны показания " + name, Toast.LENGTH_SHORT).show());
                 }
 
@@ -119,7 +99,6 @@ public class AutoReadManager {
     private void finishReading() {
         isReading = false;
 
-        // ✅ Автоматически обновляем историю после автосчитывания
         activity.loadHistoryWithFilter();
 
         mainHandler.post(() -> {
@@ -127,11 +106,12 @@ public class AutoReadManager {
             if (successNames.length() > 0) toastMsg.append("✅ Прочитаны адреса: ").append(successNames);
             if (failNames.length() > 0) {
                 if (toastMsg.length() > 0) toastMsg.append("\n");
-                toastMsg.append("❌ Непрочитаны адреса: ").append(failNames);
+                toastMsg.append(" Непрочитаны адреса: ").append(failNames);
             }
             if (toastMsg.length() > 0) Toast.makeText(context, toastMsg.toString(), Toast.LENGTH_LONG).show();
         });
 
+        // ✅ Только итоговый блок в логе
         logManager.logMsg("═══════════════════════════════════════════");
         logManager.logMsg("✅ Автосчитывание завершено");
         if (successNames.length() > 0) logManager.logMsg("   Успешно: " + successNames);
