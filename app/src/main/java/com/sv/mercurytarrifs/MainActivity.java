@@ -76,25 +76,21 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private EditText etFilterAddr, etFilterDate, etFilterSerial;
     private EditText etServerUrl, etApiPath, etTestUrl, etDeviceKey;
     private EditText etTestDateTime, etTestT1, etTestT2, etTestTotal, etTestSerial, etTestAddr;
-
     private Button btnRead, btnDateTime;
     private Button btnUnlockSettings, btnTestConnection, btnSyncNow;
     private Button btnTabReadings, btnTabHistory, btnTabService;
     private Button btnLogCopy, btnLogClear, btnHistoryCopy, btnHistoryClear, btnFilterApply;
     private Button btnAddTestReading;
-
     private TextView tvTotal, tvT1, tvT2, tvDateTime;
     private TextView tvStatus, tvPhone, tvInfoPhone, tvSiteLink, tvFooter;
     private TextView tvTestResponse;
     private TextView historyToggle, logToggle, syncToggle, testReadingToggle;
     private TextView btnAddressList;
     private TextView tvAddressLabel;
-
     private TextView tvWifiSsid;
     private TextView btnWifiInfo;
     private TextView btnWifiScan;
     private TextView btnAddressInfo;
-
     private TextView networkToggleService;
     private LinearLayout networkHeaderService, networkContentService;
     private boolean networkServiceExpanded = false;
@@ -112,13 +108,11 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private Switch switchAutoSync;
 
     private ImageView ivLogo;
-
     private LinearLayout layoutDateTime, layoutResults, layoutInfo;
     private LinearLayout tabReadings, tabService, tabHistory;
     private LinearLayout layoutWebsite;
     private LinearLayout historyContent, logContent, syncContent, testReadingContent;
     private LinearLayout historyHeader, logHeader, syncHeader, testReadingHeader;
-
     private RecyclerView rvHistory, rvLog;
 
     private AppPreferences prefs;
@@ -136,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
 
     private ArrayList<HistoryEntry> historyList;
     private HistoryAdapter historyAdapter;
-
     private BroadcastReceiver wifiReceiver;
 
     private int tapCounter = 0;
@@ -158,6 +151,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         bindViews();
 
         logManager = new LogManager(this, rvLog, bottomSheetHelper);
+
         tabManager = new TabManager(this, tabReadings, tabHistory, tabService,
                 btnTabReadings, btnTabHistory, btnTabService);
 
@@ -183,7 +177,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         setupButtonListeners();
         setupAccordion();
         loadState();
-
         testReadingManager.loadSavedValues();
 
         requestWifiPermissions();
@@ -196,7 +189,9 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             public void onReceive(Context context, Intent intent) {
                 updateWifiStatus();
                 if (autoReadManager != null && prefs.isAutoReadEnabled()) {
-                    autoReadManager.checkAndStartAutoRead();
+                    // ✅ Задержка 3 секунды для стабилизации Wi-Fi соединения
+                    new Handler(Looper.getMainLooper()).postDelayed(() ->
+                            autoReadManager.checkAndStartAutoRead(), 3000);
                 }
             }
         };
@@ -213,9 +208,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             registerReceiver(wifiReceiver, filter);
         }
         updateWifiStatus();
-        if (autoReadManager != null && prefs.isAutoReadEnabled()) {
-            autoReadManager.checkAndStartAutoRead();
-        }
     }
 
     @Override
@@ -297,6 +289,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         AlertDialog dialog = builder.create();
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
+
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
@@ -314,6 +307,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         AlertDialog dialog = builder.create();
 
         btnClose.setOnClickListener(v -> dialog.dismiss());
+
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
@@ -344,7 +338,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         int address = parseIntSafe(etAddr.getText().toString(), 1);
         String prefix = "Текущий сетевой адрес для снятия показаний: ";
         String addressStr = String.valueOf(address);
-
         SpannableString spannable = new SpannableString(prefix + addressStr);
         spannable.setSpan(
                 new ForegroundColorSpan(Color.parseColor("#4CAF50")),
@@ -366,7 +359,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         etApiPath = findViewById(R.id.etApiPath);
         etTestUrl = findViewById(R.id.etTestUrl);
         etDeviceKey = findViewById(R.id.etDeviceKey);
-
         etTestDateTime = findViewById(R.id.etTestDateTime);
         etTestT1 = findViewById(R.id.etTestT1);
         etTestT2 = findViewById(R.id.etTestT2);
@@ -399,6 +391,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         tvSiteLink = findViewById(R.id.tvSiteLink);
         tvFooter = findViewById(R.id.tvFooter);
         tvTestResponse = findViewById(R.id.tvTestResponse);
+
         historyToggle = findViewById(R.id.historyToggle);
         logToggle = findViewById(R.id.logToggle);
         syncToggle = findViewById(R.id.syncToggle);
@@ -406,7 +399,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
 
         btnAddressList = findViewById(R.id.btnAddressList);
         tvAddressLabel = findViewById(R.id.tvAddressLabel);
-
         tvWifiSsid = findViewById(R.id.tvWifiSsid);
         btnWifiInfo = findViewById(R.id.btnWifiInfo);
         btnWifiScan = findViewById(R.id.btnWifiScan);
@@ -428,14 +420,18 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         layoutDateTime = findViewById(R.id.layoutDateTime);
         layoutResults = findViewById(R.id.layoutResults);
         layoutInfo = findViewById(R.id.layoutInfo);
+
         tabReadings = findViewById(R.id.tabReadings);
         tabService = findViewById(R.id.tabService);
         tabHistory = findViewById(R.id.tabHistory);
+
         layoutWebsite = findViewById(R.id.layoutWebsite);
+
         historyContent = findViewById(R.id.historyContent);
         logContent = findViewById(R.id.logContent);
         syncContent = findViewById(R.id.syncContent);
         testReadingContent = findViewById(R.id.testReadingContent);
+
         historyHeader = findViewById(R.id.historyHeader);
         logHeader = findViewById(R.id.logHeader);
         syncHeader = findViewById(R.id.syncHeader);
@@ -595,7 +591,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
 
         tabManager.setTabsVisible(isTabsVisible);
-
         if (isTabsVisible) {
             btnAddressList.setVisibility(View.VISIBLE);
             btnDateTime.setVisibility(View.VISIBLE);
@@ -633,6 +628,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         if (btnAutoRead != null) {
             btnAutoRead.setOnClickListener(v -> showAutoReadBottomSheet());
         }
+
         if (switchAutoRead != null) {
             switchAutoRead.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 prefs.setAutoReadEnabled(isChecked);
@@ -640,7 +636,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                     autoReadManager.stopReading();
                 }
                 if (tabManager.isTabsVisible()) {
-                    Toast.makeText(this, isChecked ? "✅ Автосчитывание включено" : "⏹️ Автосчитывание выключено", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, isChecked ? "✅ Автосчитывание включено" : "️ Автосчитывание выключено", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -664,7 +660,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                     Toast.makeText(this, "✅ Автосинхронизация включена", Toast.LENGTH_SHORT).show();
                 } else {
                     cancelAutoSync();
-                    Toast.makeText(this, "⏹️ Автосинхронизация выключена", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "️ Автосинхронизация выключена", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -672,14 +668,11 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         btnRead.setOnClickListener(v -> readEnergy());
         btnDateTime.setOnClickListener(v -> readDateTime());
         btnUnlockSettings.setOnClickListener(v -> saveIpPort());
-
         btnTestConnection.setOnClickListener(v -> testServerConnection());
         btnSyncNow.setOnClickListener(v -> syncWithServer());
-
         btnHistoryCopy.setOnClickListener(v -> copyHistoryToClipboard());
         btnHistoryClear.setOnClickListener(v -> clearHistory());
         btnFilterApply.setOnClickListener(v -> loadHistoryWithFilter());
-
         btnLogCopy.setOnClickListener(v -> logManager.copyLogToClipboard());
         btnLogClear.setOnClickListener(v -> logManager.clearLog());
 
@@ -729,12 +722,11 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         etQuickPort.setText(String.valueOf(prefs.getPort()));
 
         AlertDialog dialog = builder.create();
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
 
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
         btnSave.setOnClickListener(v -> {
             String newIp = etQuickIp.getText().toString().trim();
             String newPortStr = etQuickPort.getText().toString().trim();
-
             if (!newIp.isEmpty() && !newPortStr.isEmpty()) {
                 try {
                     int newPort = Integer.parseInt(newPortStr);
@@ -778,18 +770,16 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         else rgPeriod.check(R.id.rbDaily);
 
         AlertDialog dialog = builder.create();
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
 
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
         btnSave.setOnClickListener(v -> {
             try {
                 int hour = Integer.parseInt(etHour.getText().toString().trim());
                 int minute = Integer.parseInt(etMinute.getText().toString().trim());
-
                 if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
                     Toast.makeText(this, "⚠️ Неверное время", Toast.LENGTH_SHORT).show();
                     return;
                 }
-
                 int selectedId = rgPeriod.getCheckedRadioButtonId();
                 int intervalHours = 24;
                 if (selectedId == R.id.rbTwiceDaily) intervalHours = 12;
@@ -849,11 +839,9 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         nextRun.set(Calendar.MINUTE, minute);
         nextRun.set(Calendar.SECOND, 0);
         nextRun.set(Calendar.MILLISECOND, 0);
-
         if (nextRun.before(now)) {
             nextRun.add(Calendar.DAY_OF_YEAR, 1);
         }
-
         return nextRun.getTimeInMillis() - now.getTimeInMillis();
     }
 
@@ -869,7 +857,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private void showAutoReadBottomSheet() {
         AutoReadBottomSheet bottomSheet = new AutoReadBottomSheet();
         bottomSheet.setOnNetworkSelectedListener((ssid, names) -> {
-            Toast.makeText(this, "📡 Выбрано: " + ssid + " (" + names.size() + " имён)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, " Выбрано: " + ssid + " (" + names.size() + " имён)", Toast.LENGTH_SHORT).show();
         });
         bottomSheet.show(getSupportFragmentManager(), "AutoReadSettings");
     }
@@ -997,6 +985,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         String filterSerial = etFilterSerial.getText().toString().trim();
 
         historyList.clear();
+
         android.database.Cursor cursor = dbHelper.getHistory(
                 filterAddr.isEmpty() ? null : filterAddr,
                 filterDate.isEmpty() ? null : filterDate,
@@ -1018,7 +1007,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
 
         historyAdapter.notifyDataSetChanged();
-        Toast.makeText(this, historyList.isEmpty() ? "📜 История пуста" : "📜 Загружено записей: " + historyList.size(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, historyList.isEmpty() ? "📜 История пуста" : " Загружено записей: " + historyList.size(), Toast.LENGTH_SHORT).show();
     }
 
     private void clearHistory() {
@@ -1039,7 +1028,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         StringBuilder sb = new StringBuilder();
         for (HistoryEntry entry : historyList) {
             sb.append(String.format(java.util.Locale.getDefault(),
-                    "📊 %s | 📍 %03d | 🔢 %d | ☀️ %.2f | 🌙 %.2f | 💡 %.2f кВт⋅ч\n",
+                    "📊 %s | 📍 %03d | 🔢 %d | ☀️ %.2f | 🌙 %.2f |  %.2f кВт⋅ч\n",
                     entry.datetime, entry.address, entry.serial, entry.t1, entry.t2, entry.total));
         }
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
