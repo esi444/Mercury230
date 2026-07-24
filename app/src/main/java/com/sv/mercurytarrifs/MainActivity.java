@@ -402,7 +402,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         tvWifiSsid = findViewById(R.id.tvWifiSsid);
         btnWifiInfo = findViewById(R.id.btnWifiInfo);
         btnWifiScan = findViewById(R.id.btnWifiScan);
-        btnAddressInfo = findViewById(R.id.btnAddressInfo); // ✅ Привязка кнопки Инфо
+        btnAddressInfo = findViewById(R.id.btnAddressInfo);
 
         networkHeaderService = findViewById(R.id.networkHeaderService);
         networkContentService = findViewById(R.id.networkContentService);
@@ -484,7 +484,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             }
         });
 
-        // ✅ Сайт БЕЗ проверки браузера
+        // ✅ Сайт
         layoutWebsite.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://sntprimorskoe.ru/"));
             startActivity(intent);
@@ -700,7 +700,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         addressTapCounter++;
         int remaining = TAPS_TO_IP_SETTINGS - addressTapCounter;
         if (remaining > 0) {
-            Toast.makeText(this, "🔧 До открытия настроек осталось " + remaining + " клик(ов)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "🔧 До открытия осталось " + remaining + " клик(ов)", Toast.LENGTH_SHORT).show();
         } else {
             showQuickIpPortDialog();
             addressTapCounter = 0;
@@ -974,7 +974,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         if (success) {
             loadHistoryWithFilter();
             if (tabHistory.getVisibility() != View.VISIBLE) {
-                Toast.makeText(this, "📜 Показание добавлено! Перейдите на вкладку История.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "📜 Показание добавлено!", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -1007,7 +1007,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
 
         historyAdapter.notifyDataSetChanged();
-        Toast.makeText(this, historyList.isEmpty() ? "📜 История пуста" : " Загружено записей: " + historyList.size(), Toast.LENGTH_SHORT).show();
     }
 
     private void clearHistory() {
