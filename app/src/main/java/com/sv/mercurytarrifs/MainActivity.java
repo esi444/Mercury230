@@ -45,6 +45,7 @@ import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
 import com.sv.mercurytarrifs.business.AutoReadManager;
+import com.sv.mercurytarrifs.business.BackupManager;
 import com.sv.mercurytarrifs.business.ReadingManager;
 import com.sv.mercurytarrifs.business.ServerTestManager;
 import com.sv.mercurytarrifs.business.SyncManager;
@@ -71,6 +72,12 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private static final int TAPS_TO_UNLOCK = 10;
     private static final int REQUEST_CODE_LOCATION_PERMISSION = 1001;
     private static final int TAPS_TO_IP_SETTINGS = 3;
+
+    // ✅ НОВОЕ: коды запросов для резервного копирования (SAF)
+    private static final int REQUEST_CODE_EXPORT_DB = 2001;
+    private static final int REQUEST_CODE_IMPORT_DB = 2002;
+    private static final int REQUEST_CODE_EXPORT_SETTINGS = 2003;
+    private static final int REQUEST_CODE_IMPORT_SETTINGS = 2004;
 
     private EditText etIp, etPort, etAddr;
     private EditText etFilterAddr, etFilterDate, etFilterSerial;
@@ -107,6 +114,15 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private ImageButton btnAutoSyncSettings;
     private Switch switchAutoSync;
 
+    // ✅ НОВОЕ: Резервное копирование БД и настроек
+    private LinearLayout backupHeader, backupContent;
+    private TextView backupToggle;
+    private Button btnExportDb, btnImportDb;
+    private Button btnExportSettings, btnImportSettings;
+    private Button btnClearHistoryDb;
+    private boolean backupExpanded = false;
+    private BackupManager backupManager;
+
     private ImageView ivLogo;
     private LinearLayout layoutDateTime, layoutResults, layoutInfo;
     private LinearLayout tabReadings, tabService, tabHistory;
@@ -131,6 +147,10 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private ArrayList<HistoryEntry> historyList;
     private HistoryAdapter historyAdapter;
     private BroadcastReceiver wifiReceiver;
+
+    // ✅ НОВОЕ: Для защиты от двойного запуска автосчитывания (Debounce)
+    private Handler autoReadHandler;
+    private Runnable autoReadRunnable;
 
     private int tapCounter = 0;
     private int addressTapCounter = 0;
@@ -171,6 +191,9 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         // ✅ НОВОЕ: Инициализация WorkManager
         workManager = WorkManager.getInstance(this);
 
+        // ✅ НОВОЕ: Инициализация BackupManager (с prefs для бэкапа настроек)
+        backupManager = new BackupManager(this, dbHelper, prefs);
+
         setupRecyclerViews();
         setupLogo();
         setupLinks();
@@ -180,7 +203,29 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         testReadingManager.loadSavedValues();
 
         requestWifiPermissions();
+
+        // ✅ НОВОЕ: Инициализация Handler для Debounce
+        autoReadHandler = new Handler(Looper.getMainLooper());
+
         initWifiReceiver();
+    }
+
+    // ✅ НОВЫЙ МЕТОД: Планирование автосчитывания с защитой от дублей (Debounce)
+    private void scheduleAutoReadWithDebounce() {
+        // 1. Если задача уже висит в очереди, отменяем её
+        if (autoReadRunnable != null) {
+            autoReadHandler.removeCallbacks(autoReadRunnable);
+        }
+
+        // 2. Создаем новую задачу
+        autoReadRunnable = () -> {
+            if (autoReadManager != null && !autoReadManager.isReading()) {
+                autoReadManager.checkAndStartAutoRead();
+            }
+        };
+
+        // 3. Планируем её выполнение через 4.5 секунды
+        autoReadHandler.postDelayed(autoReadRunnable, 4500);
     }
 
     private void initWifiReceiver() {
@@ -189,9 +234,8 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             public void onReceive(Context context, Intent intent) {
                 updateWifiStatus();
                 if (autoReadManager != null && prefs.isAutoReadEnabled()) {
-                    // ✅ Задержка 3 секунды для стабилизации Wi-Fi соединения
-                    new Handler(Looper.getMainLooper()).postDelayed(() ->
-                            autoReadManager.checkAndStartAutoRead(), 3000);
+                    // ✅ Используем новый метод с защитой от дублей
+                    scheduleAutoReadWithDebounce();
                 }
             }
         };
@@ -216,6 +260,174 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         if (wifiReceiver != null) {
             unregisterReceiver(wifiReceiver);
         }
+        // ✅ Очищаем запланированные запуски при паузе
+        if (autoReadHandler != null && autoReadRunnable != null) {
+            autoReadHandler.removeCallbacks(autoReadRunnable);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // ✅ Очищаем запланированные запуски при уничтожении
+        if (autoReadHandler != null && autoReadRunnable != null) {
+            autoReadHandler.removeCallbacks(autoReadRunnable);
+        }
+    }
+
+    // ✅ НОВОЕ: Обработка результатов выбора файла (экспорт/импорт БД и настроек)
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        Uri uri = data.getData();
+
+        if (requestCode == REQUEST_CODE_EXPORT_DB) {
+            new Thread(() -> {
+                boolean ok = backupManager.exportDatabase(uri);
+                runOnUiThread(() -> {
+                    if (ok) {
+                        logManager.logMsg("💾 БД экспортирована в выбранный файл");
+                        Toast.makeText(this, "✅ База данных экспортирована", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "❌ Ошибка экспорта базы данных", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }).start();
+        } else if (requestCode == REQUEST_CODE_IMPORT_DB) {
+            new AlertDialog.Builder(this)
+                    .setTitle("⚠️ Импорт базы данных")
+                    .setMessage("Текущая база будет ПОЛНОСТЬЮ заменена файлом резервной копии. Продолжить?")
+                    .setPositiveButton("✅ Да", (dialog, which) -> performImport(uri))
+                    .setNegativeButton("❌ Нет", null)
+                    .show();
+        } else if (requestCode == REQUEST_CODE_EXPORT_SETTINGS) {
+            new Thread(() -> {
+                boolean ok = backupManager.exportSettings(uri);
+                runOnUiThread(() -> {
+                    if (ok) {
+                        logManager.logMsg("⚙️ Настройки экспортированы в выбранный файл");
+                        Toast.makeText(this, "✅ Настройки экспортированы", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "❌ Ошибка экспорта настроек", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }).start();
+        } else if (requestCode == REQUEST_CODE_IMPORT_SETTINGS) {
+            new AlertDialog.Builder(this)
+                    .setTitle("⚠️ Импорт настроек")
+                    .setMessage("Текущие настройки и списки адресов автосчитывания будут заменены значениями из файла. История показаний НЕ изменится. Продолжить?")
+                    .setPositiveButton("✅ Да", (dialog, which) -> performImportSettings(uri))
+                    .setNegativeButton("❌ Нет", null)
+                    .show();
+        }
+    }
+
+    // ✅ НОВОЕ: Выполнение импорта БД с перезапуском активности
+    private void performImport(Uri uri) {
+        new Thread(() -> {
+            final int result = backupManager.importDatabase(uri);
+            runOnUiThread(() -> {
+                if (result == BackupManager.IMPORT_OK) {
+                    Toast.makeText(this, "✅ База импортирована. Перезапуск...", Toast.LENGTH_LONG).show();
+                    new Handler(Looper.getMainLooper()).postDelayed(this::recreate, 1500);
+                } else if (result == BackupManager.IMPORT_INVALID_FILE) {
+                    Toast.makeText(this, "❌ Выбранный файл не является базой данных", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "❌ Ошибка импорта базы данных", Toast.LENGTH_LONG).show();
+                }
+            });
+        }).start();
+    }
+
+    // ✅ НОВОЕ: Выполнение импорта настроек с перезапуском активности
+    private void performImportSettings(Uri uri) {
+        new Thread(() -> {
+            final int result = backupManager.importSettings(uri);
+            runOnUiThread(() -> {
+                if (result == BackupManager.IMPORT_OK) {
+                    logManager.logMsg("⚙️ Настройки импортированы из файла");
+                    Toast.makeText(this, "✅ Настройки импортированы. Перезапуск...", Toast.LENGTH_LONG).show();
+                    new Handler(Looper.getMainLooper()).postDelayed(this::recreate, 1500);
+                } else if (result == BackupManager.IMPORT_INVALID_FILE) {
+                    Toast.makeText(this, "❌ Выбранный файл не является файлом настроек", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "❌ Ошибка импорта настроек", Toast.LENGTH_LONG).show();
+                }
+            });
+        }).start();
+    }
+
+    // ✅ НОВОЕ: Запуск системного диалога сохранения файла (экспорт БД)
+    private void startExportDb() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            String fileName = "mercury_backup_" +
+                    new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
+                            .format(new java.util.Date()) + ".db";
+            intent.putExtra(Intent.EXTRA_TITLE, fileName);
+            startActivityForResult(intent, REQUEST_CODE_EXPORT_DB);
+        } catch (Exception e) {
+            Toast.makeText(this, "⚠️ Не удалось открыть диалог сохранения", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ✅ НОВОЕ: Запуск системного диалога выбора файла (импорт БД)
+    private void startImportDb() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            startActivityForResult(intent, REQUEST_CODE_IMPORT_DB);
+        } catch (Exception e) {
+            Toast.makeText(this, "⚠️ Не удалось открыть диалог выбора файла", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ✅ НОВОЕ: Экспорт настроек (без истории)
+    private void startExportSettings() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            String fileName = "mercury_settings_" +
+                    new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault())
+                            .format(new java.util.Date()) + ".json";
+            intent.putExtra(Intent.EXTRA_TITLE, fileName);
+            startActivityForResult(intent, REQUEST_CODE_EXPORT_SETTINGS);
+        } catch (Exception e) {
+            Toast.makeText(this, "⚠️ Не удалось открыть диалог сохранения", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ✅ НОВОЕ: Импорт настроек (без истории)
+    private void startImportSettings() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            startActivityForResult(intent, REQUEST_CODE_IMPORT_SETTINGS);
+        } catch (Exception e) {
+            Toast.makeText(this, "⚠️ Не удалось открыть диалог выбора файла", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ✅ НОВОЕ: Очистка только истории (настройки и адреса сохраняются)
+    private void showClearHistoryDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("🗑️ Очистить историю показаний")
+                .setMessage("История показаний будет удалена.\nНастройки приложения и адреса автосчитывания СОХРАНЯТСЯ. Продолжить?")
+                .setPositiveButton("✅ Да", (dialog, which) -> {
+                    dbHelper.clearHistory();
+                    historyList.clear();
+                    historyAdapter.notifyDataSetChanged();
+                    logManager.logMsg("🗑️ История показаний очищена (настройки сохранены)");
+                    Toast.makeText(this, "✅ История очищена. Настройки и адреса сохранены", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("❌ Нет", null)
+                .show();
     }
 
     private void requestWifiPermissions() {
@@ -415,6 +627,16 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         btnAutoSyncSettings = findViewById(R.id.btnAutoSyncSettings);
         switchAutoSync = findViewById(R.id.switchAutoSync);
 
+        // ✅ НОВОЕ: Привязка views резервного копирования
+        backupHeader = findViewById(R.id.backupHeader);
+        backupContent = findViewById(R.id.backupContent);
+        backupToggle = findViewById(R.id.backupToggle);
+        btnExportDb = findViewById(R.id.btnExportDb);
+        btnImportDb = findViewById(R.id.btnImportDb);
+        btnExportSettings = findViewById(R.id.btnExportSettings);
+        btnImportSettings = findViewById(R.id.btnImportSettings);
+        btnClearHistoryDb = findViewById(R.id.btnClearHistoryDb);
+
         ivLogo = findViewById(R.id.ivLogo);
 
         layoutDateTime = findViewById(R.id.layoutDateTime);
@@ -500,6 +722,11 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         syncHeader.setOnClickListener(v -> toggleSync());
         testReadingHeader.setOnClickListener(v -> toggleTestReading());
         btnAddTestReading.setOnClickListener(v -> addTestReading());
+
+        // ✅ НОВОЕ: Аккордеон резервного копирования
+        if (backupHeader != null) {
+            backupHeader.setOnClickListener(v -> toggleBackup());
+        }
     }
 
     private void toggleNetworkService() {
@@ -533,6 +760,12 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         prefs.setTestReadingExpanded(testReadingExpanded);
     }
 
+    // ✅ НОВОЕ: Переключение аккордеона резервного копирования
+    private void toggleBackup() {
+        backupExpanded = !backupExpanded;
+        updateBackupUI();
+    }
+
     private void updateHistoryUI() {
         historyContent.setVisibility(historyExpanded ? View.VISIBLE : View.GONE);
         historyToggle.setText(historyExpanded ? "🔼" : "🔽");
@@ -551,6 +784,16 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private void updateTestReadingUI() {
         testReadingContent.setVisibility(testReadingExpanded ? View.VISIBLE : View.GONE);
         testReadingToggle.setText(testReadingExpanded ? "🔼" : "🔽");
+    }
+
+    // ✅ НОВОЕ: Обновление UI аккордеона резервного копирования
+    private void updateBackupUI() {
+        if (backupContent != null) {
+            backupContent.setVisibility(backupExpanded ? View.VISIBLE : View.GONE);
+        }
+        if (backupToggle != null) {
+            backupToggle.setText(backupExpanded ? "🔼" : "🔽");
+        }
     }
 
     private void loadState() {
@@ -575,6 +818,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         updateLogUI();
         updateSyncUI();
         updateTestReadingUI();
+        updateBackupUI(); // ✅ НОВОЕ
 
         if (networkContentService != null && networkToggleService != null) {
             networkContentService.setVisibility(networkServiceExpanded ? View.VISIBLE : View.GONE);
@@ -636,7 +880,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                     autoReadManager.stopReading();
                 }
                 if (tabManager.isTabsVisible()) {
-                    Toast.makeText(this, isChecked ? "✅ Автосчитывание включено" : "️ Автосчитывание выключено", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, isChecked ? "✅ Автосчитывание включено" : "⏹️ Автосчитывание выключено", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -660,9 +904,30 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                     Toast.makeText(this, "✅ Автосинхронизация включена", Toast.LENGTH_SHORT).show();
                 } else {
                     cancelAutoSync();
-                    Toast.makeText(this, "️ Автосинхронизация выключена", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "⏹️ Автосинхронизация выключена", Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+
+        // ✅ НОВОЕ: Кнопки резервного копирования БД
+        if (btnExportDb != null) {
+            btnExportDb.setOnClickListener(v -> startExportDb());
+        }
+        if (btnImportDb != null) {
+            btnImportDb.setOnClickListener(v -> startImportDb());
+        }
+
+        // ✅ НОВОЕ: Кнопки резервного копирования настроек
+        if (btnExportSettings != null) {
+            btnExportSettings.setOnClickListener(v -> startExportSettings());
+        }
+        if (btnImportSettings != null) {
+            btnImportSettings.setOnClickListener(v -> startImportSettings());
+        }
+
+        // ✅ НОВОЕ: Кнопка очистки только истории
+        if (btnClearHistoryDb != null) {
+            btnClearHistoryDb.setOnClickListener(v -> showClearHistoryDialog());
         }
 
         btnRead.setOnClickListener(v -> readEnergy());
@@ -827,7 +1092,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 syncWork
         );
 
-        logManager.logMsg("✅ Авто-синхронизация запланирована: каждые " + intervalHours + " ч в " +
+        logManager.logMsg("✅ Авто-синхронизация каждые " + intervalHours + " ч в " +
                 String.format("%02d:%02d", hour, minute));
     }
 
@@ -857,7 +1122,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private void showAutoReadBottomSheet() {
         AutoReadBottomSheet bottomSheet = new AutoReadBottomSheet();
         bottomSheet.setOnNetworkSelectedListener((ssid, names) -> {
-            Toast.makeText(this, " Выбрано: " + ssid + " (" + names.size() + " имён)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "📡 Выбрано: " + ssid + " (" + names.size() + " имён)", Toast.LENGTH_SHORT).show();
         });
         bottomSheet.show(getSupportFragmentManager(), "AutoReadSettings");
     }
@@ -1027,7 +1292,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         StringBuilder sb = new StringBuilder();
         for (HistoryEntry entry : historyList) {
             sb.append(String.format(java.util.Locale.getDefault(),
-                    "📊 %s | 📍 %03d | 🔢 %d | ☀️ %.2f | 🌙 %.2f |  %.2f кВт⋅ч\n",
+                    "📊 %s | 📍 %03d | 🔢 %d | ☀️ %.2f | 🌙 %.2f | 💡 %.2f кВт⋅ч\n",
                     entry.datetime, entry.address, entry.serial, entry.t1, entry.t2, entry.total));
         }
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);

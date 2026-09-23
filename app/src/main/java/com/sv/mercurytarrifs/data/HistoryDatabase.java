@@ -86,7 +86,6 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         }
         // ✅ МИГРАЦИЯ ВЕРСИИ 5: добавляем поле address
         if (oldVersion < 5) {
-            // Пересоздаём таблицу с новым полем
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_AUTO_READ_NAMES + "_backup");
             db.execSQL("ALTER TABLE " + TABLE_AUTO_READ_NAMES + " RENAME TO " + TABLE_AUTO_READ_NAMES + "_backup");
 
@@ -98,7 +97,6 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                     "read_order INTEGER, " +
                     "FOREIGN KEY (config_id) REFERENCES " + TABLE_AUTO_READ_CONFIG + "(id))");
 
-            // Копируем данные из старой таблицы, пытаясь извлечь адрес из имени
             db.execSQL("INSERT INTO " + TABLE_AUTO_READ_NAMES + " (id, config_id, address, custom_name, read_order) " +
                     "SELECT id, config_id, " +
                     "CASE " +
@@ -112,8 +110,24 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         }
     }
 
+    // ✅ ИСПРАВЛЕНО: имя наследуется от предыдущей записи с тем же серийником
     public void addHistory(int address, long serialNumber, String datetime, double t1, double t2, double total) {
         SQLiteDatabase db = this.getWritableDatabase();
+
+        // Ищем последнее имя для этого серийника (не прочерк)
+        String existingName = "—";
+        Cursor nameCursor = db.rawQuery(
+                "SELECT custom_name FROM " + TABLE_HISTORY +
+                        " WHERE " + COLUMN_SERIAL_NUMBER + " = ? AND " + COLUMN_CUSTOM_NAME + " != '—'" +
+                        " ORDER BY " + COLUMN_ID + " DESC LIMIT 1",
+                new String[]{String.valueOf(serialNumber)});
+        if (nameCursor != null) {
+            if (nameCursor.moveToFirst()) {
+                existingName = nameCursor.getString(0);
+            }
+            nameCursor.close();
+        }
+
         ContentValues values = new ContentValues();
         values.put(COLUMN_ADDRESS, address);
         values.put(COLUMN_SERIAL_NUMBER, serialNumber);
@@ -122,7 +136,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         values.put(COLUMN_T2, t2);
         values.put(COLUMN_TOTAL, total);
         values.put(COLUMN_SYNCED, 0);
-        values.put(COLUMN_CUSTOM_NAME, "—");
+        values.put(COLUMN_CUSTOM_NAME, existingName); // ✅ Используем найденное имя
         db.insert(TABLE_HISTORY, null, values);
         db.close();
     }
@@ -209,10 +223,23 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return count;
     }
 
+    // ✅ ИСПРАВЛЕНО: имя берётся из последней записи с непустым именем для каждого адреса
     public List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> getAddressBook() {
         SQLiteDatabase db = this.getReadableDatabase();
         List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> list = new ArrayList<>();
-        String query = "SELECT address, serial_number, custom_name FROM history GROUP BY address ORDER BY MAX(id) DESC";
+
+        // Используем подзапрос для получения последнего непустого имени для каждого адреса
+        String query = "SELECT h.address, h.serial_number, " +
+                "COALESCE(" +
+                "  (SELECT h2.custom_name FROM history h2 " +
+                "   WHERE h2.address = h.address AND h2.custom_name != '—' " +
+                "   ORDER BY h2.id DESC LIMIT 1), " +
+                "  '—'" +
+                ") as custom_name " +
+                "FROM history h " +
+                "GROUP BY h.address " +
+                "ORDER BY MAX(h.id) DESC";
+
         Cursor cursor = db.rawQuery(query, null);
         if (cursor != null) {
             while (cursor.moveToNext()) {
@@ -255,7 +282,6 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
-    // ✅ НОВЫЙ МЕТОД: возвращает пары (адрес, имя)
     public List<AddressNamePair> getAddressNamesForSsid(String ssid) {
         SQLiteDatabase db = this.getReadableDatabase();
         List<AddressNamePair> pairs = new ArrayList<>();
@@ -275,7 +301,6 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return pairs;
     }
 
-    // ✅ СТАРЫЙ МЕТОД (для обратной совместимости) - возвращает только имена
     public List<String> getNamesForSsid(String ssid) {
         List<AddressNamePair> pairs = getAddressNamesForSsid(ssid);
         List<String> names = new ArrayList<>();

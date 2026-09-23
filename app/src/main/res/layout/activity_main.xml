@@ -1438,6 +1438,145 @@
                             android:padding="15dp"/>
                     </LinearLayout>
                 </LinearLayout>
+
+                <!-- ✅ НОВОЕ: Резервное копирование (accordion) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="6dp">
+
+                    <LinearLayout
+                        android:id="@+id/backupHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:background="#3a2a4a"
+                        android:padding="15dp"
+                        android:gravity="center_vertical"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:text="💾 Резервное копирование"
+                            android:textColor="#BB86FC"
+                            android:textStyle="bold"
+                            android:textSize="18sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"/>
+
+                        <TextView
+                            android:id="@+id/backupToggle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔽"
+                            android:textSize="20sp"
+                            android:textColor="#BB86FC"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/backupContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:background="#2a1a3a"
+                        android:padding="15dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Экспорт БД — полная копия с историей показаний.\nЭкспорт настроек — сеть, адреса, сервер и тумблеры БЕЗ истории.\nОчистка истории — настройки и адреса автосчитывания сохраняются."
+                            android:textColor="#aaaaaa"
+                            android:textSize="12sp"
+                            android:lineSpacingExtra="2dp"
+                            android:layout_marginBottom="10dp"/>
+
+                        <!-- ✅ РЯД 1: База данных -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center">
+
+                            <Button
+                                android:id="@+id/btnExportDb"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="📤 Экспорт БД"
+                                android:textSize="11sp"
+                                android:backgroundTint="#2196F3"
+                                android:layout_marginEnd="5dp"
+                                android:minHeight="48dp"/>
+
+                            <Button
+                                android:id="@+id/btnImportDb"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="📥 Импорт БД"
+                                android:textSize="11sp"
+                                android:backgroundTint="#FF9800"
+                                android:layout_marginStart="5dp"
+                                android:minHeight="48dp"/>
+                        </LinearLayout>
+
+                        <!-- ✅ РЯД 2: Настройки (без истории) -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center"
+                            android:layout_marginTop="8dp">
+
+                            <Button
+                                android:id="@+id/btnExportSettings"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="⚙️ Экспорт настроек"
+                                android:textSize="11sp"
+                                android:backgroundTint="#673AB7"
+                                android:layout_marginEnd="5dp"
+                                android:minHeight="48dp"/>
+
+                            <Button
+                                android:id="@+id/btnImportSettings"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="⚙️ Импорт настроек"
+                                android:textSize="11sp"
+                                android:backgroundTint="#9C27B0"
+                                android:layout_marginStart="5dp"
+                                android:minHeight="48dp"/>
+                        </LinearLayout>
+
+                        <!-- ✅ РЯД 3: Очистка только истории -->
+                        <Button
+                            android:id="@+id/btnClearHistoryDb"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:text="🗑️ Очистить историю"
+                            android:textSize="11sp"
+                            android:backgroundTint="#F44336"
+                            android:layout_marginTop="8dp"
+                            android:minHeight="48dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Настройки и адреса автосчитывания будут сохранены"
+                            android:textColor="#888888"
+                            android:textSize="11sp"
+                            android:gravity="center"
+                            android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+                </LinearLayout>
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>
