@@ -1539,8 +1539,12 @@
                                 android:layout_weight="1"
                                 android:layout_height="48dp"
                                 android:text="⚙️ Экспорт настроек"
-                                android:textSize="11sp"
-                                android:backgroundTint="#673AB7"
+                                android:textSize="10sp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:paddingStart="6dp"
+                                android:paddingEnd="6dp"
+                                android:backgroundTint="#2196F3"
                                 android:layout_marginEnd="5dp"
                                 android:minHeight="48dp"/>
 
@@ -1550,8 +1554,12 @@
                                 android:layout_weight="1"
                                 android:layout_height="48dp"
                                 android:text="⚙️ Импорт настроек"
-                                android:textSize="11sp"
-                                android:backgroundTint="#9C27B0"
+                                android:textSize="10sp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:paddingStart="6dp"
+                                android:paddingEnd="6dp"
+                                android:backgroundTint="#FF9800"
                                 android:layout_marginStart="5dp"
                                 android:minHeight="48dp"/>
                         </LinearLayout>
