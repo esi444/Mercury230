@@ -211,6 +211,11 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
+    public void deleteHistoryById(long id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_HISTORY, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
+        db.close();
+    }
     public int getUnsyncedCount() {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_HISTORY, new String[]{"COUNT(*)"}, COLUMN_SYNCED + " = ?", new String[]{"0"}, null, null, null);

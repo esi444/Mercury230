@@ -667,6 +667,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         historyList = new ArrayList<>();
         rvHistory.setLayoutManager(new LinearLayoutManager(this));
         historyAdapter = new HistoryAdapter(historyList, this::showHistoryDetails);
+        historyAdapter.setOnHistoryDeleteListener(this::showDeleteHistoryDialog);
         rvHistory.setAdapter(historyAdapter);
     }
 
@@ -1259,6 +1260,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
 
         if (cursor != null) {
             while (cursor.moveToNext()) {
+                long id = cursor.getLong(cursor.getColumnIndexOrThrow("id"));
                 int addr = cursor.getInt(cursor.getColumnIndexOrThrow("address"));
                 String datetime = cursor.getString(cursor.getColumnIndexOrThrow("datetime"));
                 long serial = cursor.getLong(cursor.getColumnIndexOrThrow("serial_number"));
@@ -1266,7 +1268,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 double t2 = cursor.getDouble(cursor.getColumnIndexOrThrow("t2"));
                 double total = cursor.getDouble(cursor.getColumnIndexOrThrow("total"));
                 String name = cursor.getString(cursor.getColumnIndexOrThrow("custom_name"));
-                historyList.add(new HistoryEntry(addr, serial, datetime, t1, t2, total, name));
+                historyList.add(new HistoryEntry(id, addr, serial, datetime, t1, t2, total, name));
             }
             cursor.close();
         }
@@ -1304,6 +1306,21 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         bottomSheetHelper.showHistoryDetails(entry);
     }
 
+    private void showDeleteHistoryDialog(HistoryEntry entry) {
+        new AlertDialog.Builder(this)
+                .setTitle("🗑️ Удалить показание")
+                .setMessage("Удалить показание от " + entry.datetime +
+                        " (адрес " + String.format("%03d", entry.address) + ")?\nДействие нельзя отменить.")
+                .setPositiveButton("✅ Да", (dialog, which) -> {
+                    dbHelper.deleteHistoryById(entry.id);
+                    historyList.remove(entry);
+                    historyAdapter.notifyDataSetChanged();
+                    logManager.logMsg("🗑️ Удалено показание: " + entry.datetime + ", адрес " + entry.address);
+                    Toast.makeText(this, "✅ Показание удалено", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("❌ Нет", null)
+                .show();
+    }
     private void showAddressList() {
         AddressBottomSheet bottomSheet = new AddressBottomSheet();
         bottomSheet.setOnAddressSelectedListener(address -> {
