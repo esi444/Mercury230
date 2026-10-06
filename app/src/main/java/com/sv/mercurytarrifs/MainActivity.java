@@ -1,5 +1,6 @@
 package com.sv.mercurytarrifs;
 
+import android.app.DatePickerDialog;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -28,6 +29,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -61,9 +63,11 @@ import com.sv.mercurytarrifs.ui.LogManager;
 import com.sv.mercurytarrifs.ui.TabManager;
 import com.sv.mercurytarrifs.workers.AutoSyncWorker;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements AddressBottomSheet.OnAddressSelectedListener {
@@ -73,6 +77,13 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private static final int REQUEST_CODE_LOCATION_PERMISSION = 1001;
     private static final int TAPS_TO_IP_SETTINGS = 3;
 
+    // ✅ НОВОЕ: периоды фильтра истории
+    private static final int PERIOD_ALL = 0;
+    private static final int PERIOD_TODAY = 1;
+    private static final int PERIOD_WEEK = 2;
+    private static final int PERIOD_MONTH = 3;
+    private static final int PERIOD_RANGE = 4; // ✅ диапазон "с... по..." через два календаря
+
     // ✅ НОВОЕ: коды запросов для резервного копирования (SAF)
     private static final int REQUEST_CODE_EXPORT_DB = 2001;
     private static final int REQUEST_CODE_IMPORT_DB = 2002;
@@ -80,14 +91,14 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private static final int REQUEST_CODE_IMPORT_SETTINGS = 2004;
 
     private EditText etIp, etPort, etAddr;
-    private EditText etFilterAddr, etFilterDate, etFilterSerial;
+    private EditText etSearch;
     private EditText etServerUrl, etApiPath, etTestUrl, etDeviceKey;
     private EditText etTestDateTime, etTestT1, etTestT2, etTestTotal, etTestSerial, etTestAddr;
     private Button btnRead, btnDateTime;
     private Button btnUnlockSettings, btnTestConnection, btnSyncNow;
     private Button btnTabReadings, btnTabHistory, btnTabService;
-    private Button btnLogCopy, btnLogClear, btnHistoryCopy, btnHistoryClear, btnFilterApply;
     private Button btnAddTestReading;
+    private Button btnPeriod, btnCalendar, btnSearchApply, btnResetSearch;
     private TextView tvTotal, tvT1, tvT2, tvDateTime;
     private TextView tvStatus, tvPhone, tvInfoPhone, tvSiteLink, tvFooter;
     private TextView tvTestResponse;
@@ -151,6 +162,11 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     // ✅ НОВОЕ: Для защиты от двойного запуска автосчитывания (Debounce)
     private Handler autoReadHandler;
     private Runnable autoReadRunnable;
+
+    // ✅ НОВОЕ: состояние фильтра истории
+    private int currentPeriodMode = PERIOD_ALL;
+    private String selectedDateFrom = null;
+    private String selectedDateTo = null;
 
     private int tapCounter = 0;
     private int addressTapCounter = 0;
@@ -564,9 +580,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         etIp = findViewById(R.id.etIp);
         etPort = findViewById(R.id.etPort);
         etAddr = findViewById(R.id.etAddr);
-        etFilterAddr = findViewById(R.id.etFilterAddr);
-        etFilterDate = findViewById(R.id.etFilterDate);
-        etFilterSerial = findViewById(R.id.etFilterSerial);
+        etSearch = findViewById(R.id.etSearch);
         etServerUrl = findViewById(R.id.etServerUrl);
         etApiPath = findViewById(R.id.etApiPath);
         etTestUrl = findViewById(R.id.etTestUrl);
@@ -586,12 +600,13 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         btnTabReadings = findViewById(R.id.btnTabReadings);
         btnTabHistory = findViewById(R.id.btnTabHistory);
         btnTabService = findViewById(R.id.btnTabService);
-        btnLogCopy = findViewById(R.id.btnLogCopy);
-        btnLogClear = findViewById(R.id.btnLogClear);
-        btnHistoryCopy = findViewById(R.id.btnHistoryCopy);
-        btnHistoryClear = findViewById(R.id.btnHistoryClear);
-        btnFilterApply = findViewById(R.id.btnFilterApply);
         btnAddTestReading = findViewById(R.id.btnAddTestReading);
+
+        // ✅ НОВОЕ: кнопки фильтра истории
+        btnPeriod = findViewById(R.id.btnPeriod);
+        btnCalendar = findViewById(R.id.btnCalendar);
+        btnSearchApply = findViewById(R.id.btnSearchApply);
+        btnResetSearch = findViewById(R.id.btnResetSearch);
 
         tvTotal = findViewById(R.id.tvTotal);
         tvT1 = findViewById(R.id.tvT1);
@@ -820,6 +835,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         updateSyncUI();
         updateTestReadingUI();
         updateBackupUI(); // ✅ НОВОЕ
+        updatePeriodButton(); // ✅ НОВОЕ
 
         if (networkContentService != null && networkToggleService != null) {
             networkContentService.setVisibility(networkServiceExpanded ? View.VISIBLE : View.GONE);
@@ -931,17 +947,25 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             btnClearHistoryDb.setOnClickListener(v -> showClearHistoryDialog());
         }
 
+        // ✅ НОВОЕ: Кнопки фильтра истории
+        if (btnPeriod != null) {
+            btnPeriod.setOnClickListener(v -> showPeriodMenu(v));
+        }
+        if (btnCalendar != null) {
+            btnCalendar.setOnClickListener(v -> showDateRangePicker());
+        }
+        if (btnSearchApply != null) {
+            btnSearchApply.setOnClickListener(v -> loadHistoryWithFilter());
+        }
+        if (btnResetSearch != null) {
+            btnResetSearch.setOnClickListener(v -> resetSearch());
+        }
+
         btnRead.setOnClickListener(v -> readEnergy());
         btnDateTime.setOnClickListener(v -> readDateTime());
         btnUnlockSettings.setOnClickListener(v -> saveIpPort());
         btnTestConnection.setOnClickListener(v -> testServerConnection());
         btnSyncNow.setOnClickListener(v -> syncWithServer());
-        btnHistoryCopy.setOnClickListener(v -> copyHistoryToClipboard());
-        btnHistoryClear.setOnClickListener(v -> clearHistory());
-        btnFilterApply.setOnClickListener(v -> loadHistoryWithFilter());
-        btnLogCopy.setOnClickListener(v -> logManager.copyLogToClipboard());
-        btnLogClear.setOnClickListener(v -> logManager.clearLog());
-
         btnTabReadings.setOnClickListener(v -> tabManager.switchTab(0));
         btnTabService.setOnClickListener(v -> tabManager.switchTab(2));
         btnTabHistory.setOnClickListener(v -> {
@@ -1283,17 +1307,161 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
+    // ✅ НОВОЕ: выпадающее меню выбора периода
+    private void showPeriodMenu(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        popup.getMenu().add(0, PERIOD_TODAY, 0, "Сегодня");
+        popup.getMenu().add(0, PERIOD_WEEK, 1, "Неделя");
+        popup.getMenu().add(0, PERIOD_MONTH, 2, "Месяц");
+        popup.getMenu().add(0, PERIOD_ALL, 3, "Все");
+        popup.setOnMenuItemClickListener(item -> {
+            currentPeriodMode = item.getItemId();
+            selectedDateFrom = null;
+            selectedDateTo = null;
+            updatePeriodButton();
+            loadHistoryWithFilter();
+            return true;
+        });
+        popup.show();
+    }
+
+    // ✅ НОВОЕ: два календаря подряд (Начало → Конец) с защитой от перевёртыша
+    private void showDateRangePicker() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
+        Calendar now = Calendar.getInstance();
+
+        // ── ШАГ 1: выбор НАЧАЛА периода ──
+        DatePickerDialog startDialog = new DatePickerDialog(this,
+                (view, year, month, dayOfMonth) -> {
+                    Calendar startCal = Calendar.getInstance();
+                    startCal.set(year, month, dayOfMonth);
+                    // обнуляем время до начала суток для корректного minDate
+                    startCal.set(Calendar.HOUR_OF_DAY, 0);
+                    startCal.set(Calendar.MINUTE, 0);
+                    startCal.set(Calendar.SECOND, 0);
+                    startCal.set(Calendar.MILLISECOND, 0);
+                    final long startMillis = startCal.getTimeInMillis();
+                    final String fromDate = sdf.format(startCal.getTime());
+
+                    // ── ШАГ 2: выбор КОНЦА периода ──
+                    DatePickerDialog endDialog = new DatePickerDialog(this,
+                            (view2, year2, month2, dayOfMonth2) -> {
+                                Calendar endCal = Calendar.getInstance();
+                                endCal.set(year2, month2, dayOfMonth2);
+                                endCal.set(Calendar.HOUR_OF_DAY, 0);
+                                endCal.set(Calendar.MINUTE, 0);
+                                endCal.set(Calendar.SECOND, 0);
+                                endCal.set(Calendar.MILLISECOND, 0);
+                                long endMillis = endCal.getTimeInMillis();
+                                String toDate = sdf.format(endCal.getTime());
+
+                                String from = fromDate;
+                                String to = toDate;
+                                // ✅ Тихая страховка: если конец раньше начала — меняем местами (без тостов)
+                                if (endMillis < startMillis) {
+                                    from = toDate;
+                                    to = fromDate;
+                                }
+
+                                selectedDateFrom = from;
+                                selectedDateTo = to;
+                                currentPeriodMode = PERIOD_RANGE;
+                                updatePeriodButton();
+                                loadHistoryWithFilter();
+                            },
+                            startCal.get(Calendar.YEAR),
+                            startCal.get(Calendar.MONTH),
+                            startCal.get(Calendar.DAY_OF_MONTH));
+
+                    endDialog.setTitle("📅 Конец периода");
+                    // ✅ СТАНДАРТНАЯ ЗАЩИТА: даты раньше начала недоступны для выбора
+                    endDialog.getDatePicker().setMinDate(startMillis);
+                    endDialog.show();
+                },
+                now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH));
+
+        startDialog.setTitle("📅 Начало периода");
+        startDialog.show();
+    }
+
+    // ✅ НОВОЕ: обновление текста кнопки периода
+    private void updatePeriodButton() {
+        if (btnPeriod == null) return;
+        switch (currentPeriodMode) {
+            case PERIOD_TODAY:
+                btnPeriod.setText("📆 Период: Сегодня");
+                break;
+            case PERIOD_WEEK:
+                btnPeriod.setText("📆 Период: Неделя");
+                break;
+            case PERIOD_MONTH:
+                btnPeriod.setText("📆 Период: Месяц");
+                break;
+            case PERIOD_RANGE:
+                btnPeriod.setText("📆 " + (selectedDateFrom != null ? selectedDateFrom : "—") +
+                        " – " + (selectedDateTo != null ? selectedDateTo : "—"));
+                break;
+            default:
+                btnPeriod.setText("📆 Период: Все");
+                break;
+        }
+    }
+
+    // ✅ НОВОЕ: сброс поиска и периода
+    private void resetSearch() {
+        if (etSearch != null) {
+            etSearch.setText("");
+        }
+        currentPeriodMode = PERIOD_ALL;
+        selectedDateFrom = null;
+        selectedDateTo = null;
+        updatePeriodButton();
+        loadHistoryWithFilter();
+    }
+
+    // ✅ ОБНОВЛЕНО: единый поиск + период (включая диапазон дат)
     public void loadHistoryWithFilter() {
-        String filterAddr = etFilterAddr.getText().toString().trim();
-        String filterDate = etFilterDate.getText().toString().trim();
-        String filterSerial = etFilterSerial.getText().toString().trim();
+        String search = etSearch != null ? etSearch.getText().toString().trim() : "";
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
+        String from = null;
+        String to = null;
+
+        Calendar cal = Calendar.getInstance();
+        switch (currentPeriodMode) {
+            case PERIOD_TODAY:
+                from = sdf.format(cal.getTime());
+                to = from;
+                break;
+            case PERIOD_WEEK:
+                to = sdf.format(cal.getTime());
+                cal.add(Calendar.DAY_OF_YEAR, -6);
+                from = sdf.format(cal.getTime());
+                break;
+            case PERIOD_MONTH:
+                to = sdf.format(cal.getTime());
+                cal.add(Calendar.DAY_OF_YEAR, -29);
+                from = sdf.format(cal.getTime());
+                break;
+            case PERIOD_RANGE:
+                if (selectedDateFrom != null && !selectedDateFrom.isEmpty()
+                        && selectedDateTo != null && !selectedDateTo.isEmpty()) {
+                    from = selectedDateFrom;
+                    to = selectedDateTo;
+                }
+                break;
+            default:
+                from = null;
+                to = null;
+                break;
+        }
 
         historyList.clear();
 
-        android.database.Cursor cursor = dbHelper.getHistory(
-                filterAddr.isEmpty() ? null : filterAddr,
-                filterDate.isEmpty() ? null : filterDate,
-                filterSerial.isEmpty() ? null : filterSerial
+        android.database.Cursor cursor = dbHelper.getHistoryUnified(
+                search.isEmpty() ? null : search,
+                from,
+                to
         );
 
         if (cursor != null) {

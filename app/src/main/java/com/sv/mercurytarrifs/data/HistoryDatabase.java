@@ -192,6 +192,45 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return db.query(TABLE_HISTORY, null, selection, selectionArgs, null, null, COLUMN_ID + " DESC");
     }
 
+    // ✅ НОВОЕ: единый поиск (имя / адрес / серийник) + диапазон дат (dd.MM.yyyy)
+    public Cursor getHistoryUnified(String search, String dateFrom, String dateTo) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        StringBuilder selection = new StringBuilder();
+        List<String> args = new ArrayList<>();
+
+        if (search != null && !search.isEmpty()) {
+            selection.append("(")
+                    .append(COLUMN_CUSTOM_NAME).append(" LIKE ? OR ")
+                    .append("printf('%03d', ").append(COLUMN_ADDRESS).append(") LIKE ? OR ")
+                    .append("CAST(").append(COLUMN_SERIAL_NUMBER).append(" AS TEXT) LIKE ?")
+                    .append(")");
+            String like = "%" + search + "%";
+            args.add(like);
+            args.add(like);
+            args.add(like);
+        }
+
+        if (dateFrom != null && !dateFrom.isEmpty() && dateTo != null && !dateTo.isEmpty()) {
+            if (selection.length() > 0) selection.append(" AND ");
+            selection.append("(substr(").append(COLUMN_DATETIME).append(",7,4)||substr(")
+                    .append(COLUMN_DATETIME).append(",4,2)||substr(")
+                    .append(COLUMN_DATETIME).append(",1,2)) BETWEEN ? AND ?");
+            args.add(dateToKey(dateFrom));
+            args.add(dateToKey(dateTo));
+        }
+
+        return db.query(TABLE_HISTORY, null,
+                selection.length() > 0 ? selection.toString() : null,
+                args.isEmpty() ? null : args.toArray(new String[0]),
+                null, null, COLUMN_ID + " DESC");
+    }
+
+    // ✅ dd.MM.yyyy -> yyyyMMdd (для корректного сравнения дат в SQL)
+    private String dateToKey(String ddMMyyyy) {
+        if (ddMMyyyy == null || ddMMyyyy.length() != 10) return "";
+        return ddMMyyyy.substring(6, 10) + ddMMyyyy.substring(3, 5) + ddMMyyyy.substring(0, 2);
+    }
+
     public Cursor getUnsyncedHistory() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.query(TABLE_HISTORY, null, COLUMN_SYNCED + " = ?", new String[]{"0"}, null, null, COLUMN_ID + " ASC");
@@ -216,6 +255,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         db.delete(TABLE_HISTORY, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
         db.close();
     }
+
     public int getUnsyncedCount() {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_HISTORY, new String[]{"COUNT(*)"}, COLUMN_SYNCED + " = ?", new String[]{"0"}, null, null, null);
@@ -233,7 +273,6 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> list = new ArrayList<>();
 
-        // Используем подзапрос для получения последнего непустого имени для каждого адреса
         String query = "SELECT h.address, h.serial_number, " +
                 "COALESCE(" +
                 "  (SELECT h2.custom_name FROM history h2 " +
