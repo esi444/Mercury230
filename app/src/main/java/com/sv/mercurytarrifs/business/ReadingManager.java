@@ -22,6 +22,9 @@ public class ReadingManager {
     private double currentT1 = 0, currentT2 = 0, currentTotal = 0;
     private long currentSerial = 0;
 
+    // ✅ НОВОЕ: флаг «занято» — идёт чтение показаний
+    private volatile boolean isBusy = false;
+
     public ReadingManager(MainActivity activity, HistoryDatabase dbHelper, LogManager logManager,
                           TextView tvT1, TextView tvT2, TextView tvTotal,
                           TextView tvDateTime, LinearLayout layoutResults, LinearLayout layoutInfo,
@@ -38,11 +41,21 @@ public class ReadingManager {
         this.layoutDateTime = layoutDateTime;
     }
 
-    public void readEnergy(String ip, int port, int addr, Runnable onComplete) {
-        logManager.setCurrentLogMessages(new StringBuilder());
-        logManager.logMsg(" Чтение показаний (Адрес: " + addr + ")...");
-        hideResults();
+    // ✅ НОВЫЙ МЕТОД: снаружи спрашиваем, идёт ли чтение
+    public boolean isBusy() {
+        return isBusy;
+    }
 
+    public void readEnergy(String ip, int port, int addr, Runnable onComplete) {
+        // ✅ НОВОЕ: повторный вызов во время чтения молча игнорируем
+        if (isBusy) {
+            return;
+        }
+        isBusy = true;
+
+        logManager.setCurrentLogMessages(new StringBuilder());
+        logManager.logMsg("🔄 Чтение показаний (Адрес: " + addr + ")...");
+        hideResults();
         new Thread(() -> {
             MercurySocket socket = new MercurySocket();
             try {
@@ -52,47 +65,42 @@ public class ReadingManager {
                 byte[] respKeep = socket.sendAndReceive(MercuryCommands.buildKeepalive(addr), 3000);
                 if (respKeep == null) throw new Exception("Нет ответа на Keepalive");
                 logManager.logMsg("   1️⃣ Keepalive: " + bytesToHex(respKeep));
-
                 Thread.sleep(200);
 
                 byte[] respLogin = socket.sendAndReceive(MercuryCommands.buildLogin(addr), 3000);
                 if (respLogin == null) throw new Exception("Нет ответа на Login");
-                logManager.logMsg("   2️ Login: " + bytesToHex(respLogin));
-
+                logManager.logMsg("   2️⃣ Login: " + bytesToHex(respLogin));
                 Thread.sleep(200);
 
                 byte[] respT1 = socket.sendAndReceive(MercuryCommands.buildReadT1(addr), 3000);
                 double t1 = MercuryParser.parseTariff(respT1);
                 currentT1 = t1;
                 logManager.logMsg("   3️⃣ T1: " + DateTimeUtils.formatValue(t1));
-
                 Thread.sleep(200);
 
                 byte[] respT2 = socket.sendAndReceive(MercuryCommands.buildReadT2(addr), 3000);
                 double t2 = MercuryParser.parseTariff(respT2);
                 currentT2 = t2;
                 logManager.logMsg("   4️⃣ T2: " + DateTimeUtils.formatValue(t2));
-
                 Thread.sleep(200);
 
                 byte[] respTotal = socket.sendAndReceive(MercuryCommands.buildReadTotal(addr), 3000);
                 double total = MercuryParser.parseTariff(respTotal);
                 currentTotal = total;
                 logManager.logMsg("   5️⃣ Сумма: " + DateTimeUtils.formatValue(total));
-
                 Thread.sleep(200);
 
                 // ✅ ЧТЕНИЕ СЕРИЙНОГО НОМЕРА И ДАТЫ ВЫПУСКА
                 byte[] respSerial = socket.sendAndReceive(MercuryCommands.buildReadSerial(addr), 3000);
                 logManager.logMsg("   6️⃣ Серийник HEX: " + bytesToHex(respSerial));
 
+                // ✅ Серийник — прямые байты (БЕЗ BCD)
                 long serial = MercuryParser.parseSerialNumber(respSerial);
                 currentSerial = serial;
                 logManager.logMsg("   6️⃣ Серийник: " + serial);
 
                 String releaseDate = MercuryParser.parseReleaseDate(respSerial);
                 logManager.logMsg("   6️⃣ Дата выпуска: " + releaseDate);
-
                 Thread.sleep(200);
 
                 activity.runOnUiThread(() -> updateResults(t1, t2, total, serial));
@@ -113,6 +121,7 @@ public class ReadingManager {
                 logManager.finishLogEntry("Чтение показаний", false, addr, 0);
             } finally {
                 socket.close();
+                isBusy = false; // ✅ НОВОЕ: освобождаем флаг при любом исходе
             }
 
             if (onComplete != null) {
@@ -122,9 +131,14 @@ public class ReadingManager {
     }
 
     public void readDateTime(String ip, int port, int addr, Runnable onComplete) {
+        // ✅ НОВОЕ: повторный вызов во время чтения молча игнорируем
+        if (isBusy) {
+            return;
+        }
+        isBusy = true;
+
         logManager.setCurrentLogMessages(new StringBuilder());
         logManager.logMsg("🕐 Чтение даты и времени (Адрес: " + addr + ")...");
-
         new Thread(() -> {
             MercurySocket socket = new MercurySocket();
             try {
@@ -160,16 +174,19 @@ public class ReadingManager {
                 activity.runOnUiThread(() ->
                         Toast.makeText(activity, "✅ Дата и время получены!", Toast.LENGTH_SHORT).show()
                 );
-
-                if (onComplete != null) {
-                    activity.runOnUiThread(onComplete);
-                }
             } catch (Exception e) {
-                logManager.logMsg(" Ошибка: " + e.getMessage());
+                logManager.logMsg("❌ Ошибка: " + e.getMessage());
                 logManager.logMsg("   Тип: " + e.getClass().getSimpleName());
                 logManager.finishLogEntry("Чтение даты/времени", false, addr, 0);
             } finally {
                 socket.close();
+                isBusy = false; // ✅ НОВОЕ: освобождаем флаг при любом исходе
+            }
+
+            // ✅ ИСПРАВЛЕНО: onComplete теперь вызывается ВСЕГДА (даже при ошибке),
+            // иначе кнопка оставалась бы заблокированной
+            if (onComplete != null) {
+                activity.runOnUiThread(onComplete);
             }
         }).start();
     }

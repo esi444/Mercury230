@@ -961,6 +961,19 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         etDeviceKey.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) saveSyncSettings(); });
     }
 
+    // ✅ НОВЫЙ МЕТОД: визуальная блокировка кнопок ручного чтения (БЕЗ тостов)
+    public void setReadButtonsLocked(boolean locked) {
+        if (btnRead != null) {
+            btnRead.setEnabled(!locked);
+            btnRead.setAlpha(locked ? 0.6f : 1.0f);
+            btnRead.setText(locked ? "⏳ Чтение..." : "Прочитать показания");
+        }
+        if (btnDateTime != null) {
+            btnDateTime.setEnabled(!locked);
+            btnDateTime.setAlpha(locked ? 0.6f : 1.0f);
+        }
+    }
+
     // ✅ Обработка 3-х кликов на "Адрес:"
     private void handleAddressTap() {
         addressTapCounter++;
@@ -1207,19 +1220,44 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         syncManager.syncWithServer(serverUrl, apiPath, deviceKey);
     }
 
+    // ✅ ИСПРАВЛЕНО: защита от повторных нажатий — молча игнорируем, блокируем кнопки
     private void readEnergy() {
+        if (readingManager.isBusy() || (autoReadManager != null && autoReadManager.isReading())) {
+            return; // ✅ БЕЗ тоста
+        }
+        setReadButtonsLocked(true);
         prefs.setAddress(parseIntSafe(etAddr.getText().toString(), 1));
         updateStatus();
-        readingManager.readEnergy(prefs.getIp(), prefs.getPort(), prefs.getAddress(), null);
+        readingManager.readEnergy(prefs.getIp(), prefs.getPort(), prefs.getAddress(),
+                () -> {
+                    // ✅ Разблокируем только если автосчитывание не перехватило кнопки
+                    if (autoReadManager == null || !autoReadManager.isReading()) {
+                        setReadButtonsLocked(false);
+                    }
+                });
     }
 
+    // ✅ ИСПРАВЛЕНО: защита от повторных нажатий — молча игнорируем, блокируем кнопки
     private void readDateTime() {
+        if (readingManager.isBusy() || (autoReadManager != null && autoReadManager.isReading())) {
+            return; // ✅ БЕЗ тоста
+        }
+        setReadButtonsLocked(true);
         int addr = parseIntSafe(etAddr.getText().toString(), 1);
-        readingManager.readDateTime(prefs.getIp(), prefs.getPort(), addr, null);
+        readingManager.readDateTime(prefs.getIp(), prefs.getPort(), addr,
+                () -> {
+                    if (autoReadManager == null || !autoReadManager.isReading()) {
+                        setReadButtonsLocked(false);
+                    }
+                });
     }
 
     public void triggerAutoRead(int address) {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            // ✅ Молча игнорируем, если чтение уже идёт
+            if (readingManager.isBusy() || (autoReadManager != null && autoReadManager.isReading())) {
+                return;
+            }
             etAddr.setText(String.valueOf(address));
             prefs.setAddress(address);
             updateStatus();
@@ -1321,6 +1359,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 .setNegativeButton("❌ Нет", null)
                 .show();
     }
+
     private void showAddressList() {
         AddressBottomSheet bottomSheet = new AddressBottomSheet();
         bottomSheet.setOnAddressSelectedListener(address -> {

@@ -44,10 +44,18 @@ public class AutoReadManager {
 
     public void checkAndStartAutoRead() {
         if (!prefs.isAutoReadEnabled()) return;
+
         String ssid = getCurrentWifiSsid();
         if (ssid == null || ssid.isEmpty()) return;
+
         if (isReading && currentSsid != null && currentSsid.equals(ssid)) return;
         if (isReading && (currentSsid == null || !currentSsid.equals(ssid))) stopReading();
+
+        // ✅ НОВОЕ: если идёт ручное чтение — откладываем старт прохода, не мешаем
+        if (readingManager.isBusy()) {
+            mainHandler.postDelayed(this::checkAndStartAutoRead, 1000);
+            return;
+        }
 
         List<AddressNamePair> pairs = dbHelper.getAddressNamesForSsid(ssid);
         if (pairs == null || pairs.isEmpty()) return;
@@ -63,21 +71,31 @@ public class AutoReadManager {
         successNames.setLength(0);
         failNames.setLength(0);
 
-        // ✅ Убрано детальное логирование — только начало процесса
+        // ✅ НОВОЕ: визуально блокируем кнопки ручного чтения на весь проход
+        activity.runOnUiThread(() -> activity.setReadButtonsLocked(true));
+
         readNextItem();
     }
 
     private void readNextItem() {
+        // ✅ НОВОЕ: проход остановлен — выходим (защита от отложенных задач)
+        if (!isReading) return;
+
         if (currentIndex >= itemsToRead.size()) {
             finishReading();
+            return;
+        }
+
+        // ✅ НОВОЕ: если занято ручным чтением — ждём и повторяем шаг,
+        // НЕ запускаем второе параллельное чтение
+        if (readingManager.isBusy()) {
+            mainHandler.postDelayed(this::readNextItem, 500);
             return;
         }
 
         final AddressNamePair item = itemsToRead.get(currentIndex);
         final int address = item.address;
         final String name = item.name;
-
-        // ✅ Убрано логирование каждого чтения
 
         readingManager.readEnergy(prefs.getIp(), prefs.getPort(), address, new Runnable() {
             @Override
@@ -99,6 +117,13 @@ public class AutoReadManager {
     private void finishReading() {
         isReading = false;
 
+        // ✅ НОВОЕ: разблокируем кнопки, если нет ручного чтения
+        activity.runOnUiThread(() -> {
+            if (!readingManager.isBusy()) {
+                activity.setReadButtonsLocked(false);
+            }
+        });
+
         activity.loadHistoryWithFilter();
 
         mainHandler.post(() -> {
@@ -106,12 +131,11 @@ public class AutoReadManager {
             if (successNames.length() > 0) toastMsg.append("✅ Прочитаны адреса: ").append(successNames);
             if (failNames.length() > 0) {
                 if (toastMsg.length() > 0) toastMsg.append("\n");
-                toastMsg.append(" Непрочитаны адреса: ").append(failNames);
+                toastMsg.append("❌ Непрочитаны адреса: ").append(failNames);
             }
             if (toastMsg.length() > 0) Toast.makeText(context, toastMsg.toString(), Toast.LENGTH_LONG).show();
         });
 
-        // ✅ Только итоговый блок в логе
         logManager.logMsg("═══════════════════════════════════════════");
         logManager.logMsg("✅ Автосчитывание завершено");
         if (successNames.length() > 0) logManager.logMsg("   Успешно: " + successNames);
@@ -124,6 +148,14 @@ public class AutoReadManager {
         isReading = false;
         currentSsid = null;
         itemsToRead = null;
+
+        // ✅ НОВОЕ: разблокируем кнопки, если нет ручного чтения
+        activity.runOnUiThread(() -> {
+            if (!readingManager.isBusy()) {
+                activity.setReadButtonsLocked(false);
+            }
+        });
+
         logManager.logMsg("⏹️ Автосчитывание остановлено");
     }
 
