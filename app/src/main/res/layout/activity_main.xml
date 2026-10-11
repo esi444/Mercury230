@@ -1409,7 +1409,8 @@
                             android:layout_height="wrap_content"
                             android:text="Экспорт БД — полная копия с историей показаний.
 Экспорт настроек — сеть, адреса, сервер и тумблеры БЕЗ истории.
-Очистка истории — настройки и адреса автосчитывания сохраняются."
+Очистка истории — настройки и адреса автосчитывания сохраняются.
+Облако — общая адресная книга и сети автосчитывания команды."
                             android:textColor="#aaaaaa"
                             android:textSize="12sp"
                             android:lineSpacingExtra="2dp"
@@ -1503,6 +1504,52 @@
                             android:textSize="11sp"
                             android:gravity="center"
                             android:layout_marginTop="4dp"/>
+
+                        <!-- ✅ НОВОЕ: Разделительная полоска -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#333333"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="12dp"/>
+
+                        <!-- ✅ НОВОЕ: РЯД 4: Облачный бэкап -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center">
+
+                            <Button
+                                android:id="@+id/btnCloudSave"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="☁️ Создать бэкап"
+                                android:textSize="10sp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:paddingStart="6dp"
+                                android:paddingEnd="6dp"
+                                android:backgroundTint="#2196F3"
+                                android:layout_marginEnd="5dp"
+                                android:minHeight="48dp"/>
+
+                            <Button
+                                android:id="@+id/btnCloudLoad"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="48dp"
+                                android:text="☁️ Загрузить бэкап"
+                                android:textSize="10sp"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:paddingStart="6dp"
+                                android:paddingEnd="6dp"
+                                android:backgroundTint="#FF9800"
+                                android:layout_marginStart="5dp"
+                                android:minHeight="48dp"/>
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

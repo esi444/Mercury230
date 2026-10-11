@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class HistoryDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "history.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6; // ✅ НОВОЕ: версия 6 (subscribers)
 
     private static final String TABLE_HISTORY = "history";
     private static final String COLUMN_ID = "id";
@@ -29,8 +29,24 @@ public class HistoryDatabase extends SQLiteOpenHelper {
     private static final String TABLE_AUTO_READ_CONFIG = "auto_read_config";
     private static final String TABLE_AUTO_READ_NAMES = "auto_read_names";
 
+    // ✅ НОВАЯ ТАБЛИЦА: абоненты из облачного бэкапа
+    private static final String TABLE_SUBSCRIBERS = "subscribers";
+
     public HistoryDatabase(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    // ✅ НОВОЕ: строка таблицы subscribers (облачный бэкап)
+    public static class SubscriberRow {
+        public final int address;
+        public final long serialNumber;
+        public final String name;
+
+        public SubscriberRow(int address, long serialNumber, String name) {
+            this.address = address;
+            this.serialNumber = serialNumber;
+            this.name = name;
+        }
     }
 
     @Override
@@ -61,6 +77,14 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                 "custom_name TEXT NOT NULL, " +
                 "read_order INTEGER, " +
                 "FOREIGN KEY (config_id) REFERENCES " + TABLE_AUTO_READ_CONFIG + "(id))");
+
+        // ✅ НОВОЕ: таблица абонентов для облачного бэкапа
+        db.execSQL("CREATE TABLE " + TABLE_SUBSCRIBERS + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_ADDRESS + " INTEGER NOT NULL, " +
+                COLUMN_SERIAL_NUMBER + " INTEGER NOT NULL, " +
+                COLUMN_CUSTOM_NAME + " TEXT DEFAULT '—' " +
+                ")");
     }
 
     @Override
@@ -107,6 +131,15 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                     "FROM " + TABLE_AUTO_READ_NAMES + "_backup");
 
             db.execSQL("DROP TABLE " + TABLE_AUTO_READ_NAMES + "_backup");
+        }
+        // ✅ НОВОЕ: МИГРАЦИЯ ВЕРСИИ 6: таблица subscribers для облачного бэкапа
+        if (oldVersion < 6) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_SUBSCRIBERS + " (" +
+                    COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    COLUMN_ADDRESS + " INTEGER NOT NULL, " +
+                    COLUMN_SERIAL_NUMBER + " INTEGER NOT NULL, " +
+                    COLUMN_CUSTOM_NAME + " TEXT DEFAULT '—' " +
+                    ")");
         }
     }
 
@@ -268,33 +301,64 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return count;
     }
 
-    // ✅ ИСПРАВЛЕНО: имя берётся из последней записи с непустым именем для каждого адреса
-    public List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> getAddressBook() {
+    // ✅ НОВОЕ: полная замена таблицы subscribers (загрузка облачного бэкапа)
+    public void replaceSubscribers(List<SubscriberRow> rows) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            db.beginTransaction();
+            db.delete(TABLE_SUBSCRIBERS, null, null);
+            if (rows != null) {
+                for (SubscriberRow r : rows) {
+                    ContentValues v = new ContentValues();
+                    v.put(COLUMN_ADDRESS, r.address);
+                    v.put(COLUMN_SERIAL_NUMBER, r.serialNumber);
+                    v.put(COLUMN_CUSTOM_NAME, r.name);
+                    db.insert(TABLE_SUBSCRIBERS, null, v);
+                }
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+        db.close();
+    }
+
+    // ✅ НОВОЕ: адресная книга = история + subscribers (список доступен БЕЗ первого чтения)
+    public List<SubscriberRow> getSubscribersUnion() {
         SQLiteDatabase db = this.getReadableDatabase();
-        List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> list = new ArrayList<>();
-
-        String query = "SELECT h.address, h.serial_number, " +
-                "COALESCE(" +
-                "  (SELECT h2.custom_name FROM history h2 " +
-                "   WHERE h2.address = h.address AND h2.custom_name != '—' " +
-                "   ORDER BY h2.id DESC LIMIT 1), " +
-                "  '—'" +
-                ") as custom_name " +
-                "FROM history h " +
-                "GROUP BY h.address " +
-                "ORDER BY MAX(h.id) DESC";
-
+        List<SubscriberRow> rows = new ArrayList<>();
+        String query = "SELECT address, serial_number, custom_name FROM (" +
+                "SELECT 0 AS src, MAX(h.id) AS ord, h.address AS address, h.serial_number AS serial_number, " +
+                "COALESCE((SELECT h2.custom_name FROM " + TABLE_HISTORY + " h2 " +
+                "WHERE h2.address = h.address AND h2.custom_name != '—' " +
+                "ORDER BY h2.id DESC LIMIT 1), '—') AS custom_name " +
+                "FROM " + TABLE_HISTORY + " h GROUP BY h.address " +
+                "UNION ALL " +
+                "SELECT 1 AS src, s.id AS ord, s.address AS address, s.serial_number AS serial_number, s.custom_name AS custom_name " +
+                "FROM " + TABLE_SUBSCRIBERS + " s " +
+                "WHERE s.address NOT IN (SELECT address FROM " + TABLE_HISTORY + ") " +
+                ") ORDER BY src ASC, ord DESC";
         Cursor cursor = db.rawQuery(query, null);
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                int address = cursor.getInt(cursor.getColumnIndexOrThrow("address"));
-                long serial = cursor.getLong(cursor.getColumnIndexOrThrow("serial_number"));
-                String name = cursor.getString(cursor.getColumnIndexOrThrow("custom_name"));
-                list.add(new com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem(address, serial, name));
+                rows.add(new SubscriberRow(
+                        cursor.getInt(cursor.getColumnIndexOrThrow("address")),
+                        cursor.getLong(cursor.getColumnIndexOrThrow("serial_number")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("custom_name"))));
             }
             cursor.close();
         }
         db.close();
+        return rows;
+    }
+
+    // ✅ ИСПРАВЛЕНО: адресная книга строится из union-запроса (история + subscribers)
+    public List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> getAddressBook() {
+        List<SubscriberRow> rows = getSubscribersUnion();
+        List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> list = new ArrayList<>();
+        for (SubscriberRow r : rows) {
+            list.add(new com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem(r.address, r.serialNumber, r.name));
+        }
         return list;
     }
 

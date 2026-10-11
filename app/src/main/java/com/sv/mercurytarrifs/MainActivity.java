@@ -48,6 +48,7 @@ import androidx.work.WorkManager;
 
 import com.sv.mercurytarrifs.business.AutoReadManager;
 import com.sv.mercurytarrifs.business.BackupManager;
+import com.sv.mercurytarrifs.business.CloudBackupManager;
 import com.sv.mercurytarrifs.business.ReadingManager;
 import com.sv.mercurytarrifs.business.ServerTestManager;
 import com.sv.mercurytarrifs.business.SyncManager;
@@ -62,6 +63,8 @@ import com.sv.mercurytarrifs.ui.HistoryAdapter;
 import com.sv.mercurytarrifs.ui.LogManager;
 import com.sv.mercurytarrifs.ui.TabManager;
 import com.sv.mercurytarrifs.workers.AutoSyncWorker;
+
+import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -133,6 +136,10 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private Button btnClearHistoryDb;
     private boolean backupExpanded = false;
     private BackupManager backupManager;
+
+    // ✅ НОВОЕ: Облачный бэкап
+    private Button btnCloudSave, btnCloudLoad;
+    private CloudBackupManager cloudBackupManager;
 
     private ImageView ivLogo;
     private LinearLayout layoutDateTime, layoutResults, layoutInfo;
@@ -209,6 +216,9 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
 
         // ✅ НОВОЕ: Инициализация BackupManager (с prefs для бэкапа настроек)
         backupManager = new BackupManager(this, dbHelper, prefs);
+
+        // ✅ НОВОЕ: Инициализация CloudBackupManager
+        cloudBackupManager = new CloudBackupManager(this, dbHelper, prefs);
 
         setupRecyclerViews();
         setupLogo();
@@ -446,6 +456,114 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 .show();
     }
 
+    // ═══════════════════════════════════════
+    // ✅ НОВОЕ: ОБЛАЧНЫЙ БЭКАП (пароль 0000 + подтверждения)
+    // ═══════════════════════════════════════
+
+    // ✅ Ввод пароля перед облачными операциями (переиспользуем UNLOCK_PASSWORD)
+    private void showCloudPasswordDialog(Runnable onSuccess) {
+        EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        input.setHint("Введите пароль");
+        input.setTextSize(16);
+        input.setPadding(50, 40, 50, 40);
+
+        new AlertDialog.Builder(this)
+                .setTitle("🔒 Облачный бэкап")
+                .setMessage("Введите пароль для доступа к облачному бэкапу:")
+                .setView(input)
+                .setPositiveButton("OK", (dialog, which) -> {
+                    String password = input.getText().toString();
+                    if (password.equals(UNLOCK_PASSWORD)) {
+                        onSuccess.run();
+                    } else {
+                        Toast.makeText(this, "❌ Неверный пароль.", Toast.LENGTH_LONG).show();
+                    }
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    // ✅ Создать бэкап: пароль → подтверждение → отправка
+    private void startCloudSave() {
+        showCloudPasswordDialog(() -> new AlertDialog.Builder(this)
+                .setTitle("☁️ Создать бэкап")
+                .setMessage("Текущий бэкап на сервере будет ЗАМЕНЁН новыми данными (абоненты, имена, сети автосчитывания). Продолжить?")
+                .setPositiveButton("✅ Да", (dialog, which) -> performCloudSave())
+                .setNegativeButton("❌ Нет", null)
+                .show());
+    }
+
+    private void performCloudSave() {
+        new Thread(() -> {
+            final int result = cloudBackupManager.saveToCloud();
+            final String err = cloudBackupManager.lastError;
+            runOnUiThread(() -> {
+                if (result == CloudBackupManager.RESULT_OK) {
+                    logManager.logMsg("☁️ Облачный бэкап создан на сервере");
+                    Toast.makeText(this, "✅ Бэкап создан на сервере", Toast.LENGTH_SHORT).show();
+                } else if (result == CloudBackupManager.RESULT_BUILD_ERROR) {
+                    logManager.logMsg("❌ Ошибка сборки бэкапа: " + err);
+                    Toast.makeText(this, "❌ Ошибка сборки бэкапа: " + err, Toast.LENGTH_LONG).show();
+                } else {
+                    logManager.logMsg("❌ Ошибка облачного бэкапа: " + err);
+                    Toast.makeText(this, "❌ Не удалось создать бэкап: " + err, Toast.LENGTH_LONG).show();
+                }
+            });
+        }).start();
+    }
+
+    // ✅ Загрузить бэкап: пароль → инфо с сервера → подтверждение → применение
+    private void startCloudLoad() {
+        showCloudPasswordDialog(this::performCloudLoad);
+    }
+
+    private void performCloudLoad() {
+        new Thread(() -> {
+            final CloudBackupManager.LoadResult loadResult = cloudBackupManager.loadFromCloud();
+            runOnUiThread(() -> {
+                if (loadResult.code == CloudBackupManager.RESULT_NOT_FOUND) {
+                    Toast.makeText(this, "❌ На сервере пока нет бэкапа", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (loadResult.code != CloudBackupManager.RESULT_OK || loadResult.payload == null) {
+                    Toast.makeText(this, "❌ Ошибка загрузки бэкапа с сервера", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                CloudBackupManager.CloudInfo info = cloudBackupManager.parseInfo(loadResult.payload);
+                final JSONObject payload = loadResult.payload;
+
+                new AlertDialog.Builder(this)
+                        .setTitle("☁️ Загрузить бэкап")
+                        .setMessage("Бэкап на сервере:\n" +
+                                "📅 Создан: " + info.created + "\n" +
+                                "👤 Автор: " + info.author + "\n" +
+                                "👥 Абонентов: " + info.subscribersCount + "\n" +
+                                "📡 Сетей автосчитывания: " + info.networksCount + "\n\n" +
+                                "Заменить локальные данные абонентов и сети автосчитывания?")
+                        .setPositiveButton("✅ Да", (dialog, which) -> performCloudApply(payload))
+                        .setNegativeButton("❌ Нет", null)
+                        .show();
+            });
+        }).start();
+    }
+
+    private void performCloudApply(JSONObject payload) {
+        new Thread(() -> {
+            final boolean ok = cloudBackupManager.applyPayload(payload);
+            runOnUiThread(() -> {
+                if (ok) {
+                    logManager.logMsg("☁️ Облачный бэкап применён");
+                    Toast.makeText(this, "✅ Бэкап загружен. Перезапуск...", Toast.LENGTH_LONG).show();
+                    new Handler(Looper.getMainLooper()).postDelayed(this::recreate, 1500);
+                } else {
+                    Toast.makeText(this, "❌ Ошибка применения бэкапа", Toast.LENGTH_LONG).show();
+                }
+            });
+        }).start();
+    }
+
     private void requestWifiPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -651,6 +769,10 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         btnExportSettings = findViewById(R.id.btnExportSettings);
         btnImportSettings = findViewById(R.id.btnImportSettings);
         btnClearHistoryDb = findViewById(R.id.btnClearHistoryDb);
+
+        // ✅ НОВОЕ: Привязка кнопок облачного бэкапа
+        btnCloudSave = findViewById(R.id.btnCloudSave);
+        btnCloudLoad = findViewById(R.id.btnCloudLoad);
 
         ivLogo = findViewById(R.id.ivLogo);
 
@@ -945,6 +1067,14 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         // ✅ НОВОЕ: Кнопка очистки только истории
         if (btnClearHistoryDb != null) {
             btnClearHistoryDb.setOnClickListener(v -> showClearHistoryDialog());
+        }
+
+        // ✅ НОВОЕ: Кнопки облачного бэкапа
+        if (btnCloudSave != null) {
+            btnCloudSave.setOnClickListener(v -> startCloudSave());
+        }
+        if (btnCloudLoad != null) {
+            btnCloudLoad.setOnClickListener(v -> startCloudLoad());
         }
 
         // ✅ НОВОЕ: Кнопки фильтра истории
