@@ -80,14 +80,12 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private static final int REQUEST_CODE_LOCATION_PERMISSION = 1001;
     private static final int TAPS_TO_IP_SETTINGS = 3;
 
-    // ✅ НОВОЕ: периоды фильтра истории
     private static final int PERIOD_ALL = 0;
     private static final int PERIOD_TODAY = 1;
     private static final int PERIOD_WEEK = 2;
     private static final int PERIOD_MONTH = 3;
-    private static final int PERIOD_RANGE = 4; // ✅ диапазон "с... по..." через два календаря
+    private static final int PERIOD_RANGE = 4;
 
-    // ✅ НОВОЕ: коды запросов для резервного копирования (SAF)
     private static final int REQUEST_CODE_EXPORT_DB = 2001;
     private static final int REQUEST_CODE_IMPORT_DB = 2002;
     private static final int REQUEST_CODE_EXPORT_SETTINGS = 2003;
@@ -116,19 +114,14 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private LinearLayout networkHeaderService, networkContentService;
     private boolean networkServiceExpanded = false;
 
-    // ✅ НОВЫЕ: Для автосчитывания
     private LinearLayout btnAutoRead;
     private Switch switchAutoRead;
     private AutoReadManager autoReadManager;
 
-    // ✅ НОВОЕ: Кнопка быстрой синхронизации
     private ImageButton btnQuickSync;
-
-    // ✅ НОВОЕ: Кнопка настроек авто-синхронизации
     private ImageButton btnAutoSyncSettings;
     private Switch switchAutoSync;
 
-    // ✅ НОВОЕ: Резервное копирование БД и настроек
     private LinearLayout backupHeader, backupContent;
     private TextView backupToggle;
     private Button btnExportDb, btnImportDb;
@@ -137,8 +130,8 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private boolean backupExpanded = false;
     private BackupManager backupManager;
 
-    // ✅ НОВОЕ: Облачный бэкап
     private Button btnCloudSave, btnCloudLoad;
+    private EditText etCloudUrl, etCloudApi, etCloudPassword;
     private CloudBackupManager cloudBackupManager;
 
     private ImageView ivLogo;
@@ -159,18 +152,15 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private ServerTestManager serverTestManager;
     private TestReadingManager testReadingManager;
 
-    // ✅ НОВОЕ: WorkManager для фоновой синхронизации
     private WorkManager workManager;
 
     private ArrayList<HistoryEntry> historyList;
     private HistoryAdapter historyAdapter;
     private BroadcastReceiver wifiReceiver;
 
-    // ✅ НОВОЕ: Для защиты от двойного запуска автосчитывания (Debounce)
     private Handler autoReadHandler;
     private Runnable autoReadRunnable;
 
-    // ✅ НОВОЕ: состояние фильтра истории
     private int currentPeriodMode = PERIOD_ALL;
     private String selectedDateFrom = null;
     private String selectedDateTo = null;
@@ -208,16 +198,12 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         testReadingManager = new TestReadingManager(this, dbHelper, prefs);
         testReadingManager.setFields(etTestDateTime, etTestT1, etTestT2, etTestTotal, etTestSerial, etTestAddr);
 
-        // ✅ НОВОЕ: Инициализация AutoReadManager
         autoReadManager = new AutoReadManager(this, this, dbHelper, logManager, prefs, readingManager);
 
-        // ✅ НОВОЕ: Инициализация WorkManager
         workManager = WorkManager.getInstance(this);
 
-        // ✅ НОВОЕ: Инициализация BackupManager (с prefs для бэкапа настроек)
         backupManager = new BackupManager(this, dbHelper, prefs);
 
-        // ✅ НОВОЕ: Инициализация CloudBackupManager
         cloudBackupManager = new CloudBackupManager(this, dbHelper, prefs);
 
         setupRecyclerViews();
@@ -230,27 +216,20 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
 
         requestWifiPermissions();
 
-        // ✅ НОВОЕ: Инициализация Handler для Debounce
         autoReadHandler = new Handler(Looper.getMainLooper());
 
         initWifiReceiver();
     }
 
-    // ✅ НОВЫЙ МЕТОД: Планирование автосчитывания с защитой от дублей (Debounce)
     private void scheduleAutoReadWithDebounce() {
-        // 1. Если задача уже висит в очереди, отменяем её
         if (autoReadRunnable != null) {
             autoReadHandler.removeCallbacks(autoReadRunnable);
         }
-
-        // 2. Создаем новую задачу
         autoReadRunnable = () -> {
             if (autoReadManager != null && !autoReadManager.isReading()) {
                 autoReadManager.checkAndStartAutoRead();
             }
         };
-
-        // 3. Планируем её выполнение через 4.5 секунды
         autoReadHandler.postDelayed(autoReadRunnable, 4500);
     }
 
@@ -260,7 +239,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             public void onReceive(Context context, Intent intent) {
                 updateWifiStatus();
                 if (autoReadManager != null && prefs.isAutoReadEnabled()) {
-                    // ✅ Используем новый метод с защитой от дублей
                     scheduleAutoReadWithDebounce();
                 }
             }
@@ -286,7 +264,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         if (wifiReceiver != null) {
             unregisterReceiver(wifiReceiver);
         }
-        // ✅ Очищаем запланированные запуски при паузе
         if (autoReadHandler != null && autoReadRunnable != null) {
             autoReadHandler.removeCallbacks(autoReadRunnable);
         }
@@ -295,13 +272,12 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // ✅ Очищаем запланированные запуски при уничтожении
         if (autoReadHandler != null && autoReadRunnable != null) {
             autoReadHandler.removeCallbacks(autoReadRunnable);
         }
     }
 
-    // ✅ НОВОЕ: Обработка результатов выбора файла (экспорт/импорт БД и настроек)
+    // ✅ ИСПРАВЛЕНО: onActivityResult теперь корректно закрыт
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -340,16 +316,29 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 });
             }).start();
         } else if (requestCode == REQUEST_CODE_IMPORT_SETTINGS) {
-            new AlertDialog.Builder(this)
-                    .setTitle("⚠️ Импорт настроек")
-                    .setMessage("Текущие настройки и списки адресов автосчитывания будут заменены значениями из файла. История показаний НЕ изменится. Продолжить?")
-                    .setPositiveButton("✅ Да", (dialog, which) -> performImportSettings(uri))
-                    .setNegativeButton("❌ Нет", null)
-                    .show();
-        }
-    }
+            // ✅ УМНАЯ КНОПКА: определяем тип файла и вызываем соответствующий импорт
+            final String fileType = backupManager.readJsonType(uri);
 
-    // ✅ НОВОЕ: Выполнение импорта БД с перезапуском активности
+            if ("mercury_cloud_config".equals(fileType)) {
+                // ── Файл конфига облака (URL + API) ──
+                new AlertDialog.Builder(this)
+                        .setTitle("☁️ Импорт настроек облака")
+                        .setMessage("Файл содержит URL и API облачного бэкапа.\nТекущие значения полей «☁️ URL» и «📍 API» будут заменены.\nПароль НЕ импортируется — его нужно ввести вручную.\n\nПродолжить?")
+                        .setPositiveButton("✅ Да", (dialog, which) -> performImportCloudConfig(uri))
+                        .setNegativeButton("❌ Нет", null)
+                        .show();
+            } else {
+                // ── Файл обычных настроек (как было) ──
+                new AlertDialog.Builder(this)
+                        .setTitle("⚠️ Импорт настроек")
+                        .setMessage("Текущие настройки и списки адресов автосчитывания будут заменены значениями из файла. История показаний НЕ изменится. Продолжить?")
+                        .setPositiveButton("✅ Да", (dialog, which) -> performImportSettings(uri))
+                        .setNegativeButton("❌ Нет", null)
+                        .show();
+            }
+        }
+    } // ✅ ← ЭТА СКОБКА БЫЛА ПРОПУЩЕНА В ВАШЕМ КОДЕ
+
     private void performImport(Uri uri) {
         new Thread(() -> {
             final int result = backupManager.importDatabase(uri);
@@ -366,7 +355,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }).start();
     }
 
-    // ✅ НОВОЕ: Выполнение импорта настроек с перезапуском активности
     private void performImportSettings(Uri uri) {
         new Thread(() -> {
             final int result = backupManager.importSettings(uri);
@@ -384,7 +372,25 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }).start();
     }
 
-    // ✅ НОВОЕ: Запуск системного диалога сохранения файла (экспорт БД)
+    // ✅ НОВОЕ: выполнение импорта конфига облака
+    private void performImportCloudConfig(Uri uri) {
+        new Thread(() -> {
+            final int result = backupManager.importCloudConfig(uri);
+            runOnUiThread(() -> {
+                if (result == BackupManager.IMPORT_CLOUD_OK) {
+                    etCloudUrl.setText(prefs.getCloudUrl());
+                    etCloudApi.setText(prefs.getCloudApi());
+                    logManager.logMsg("☁️ Настройки облака импортированы из файла");
+                    Toast.makeText(this, "✅ URL и API облака импортированы. Введите пароль вручную.", Toast.LENGTH_LONG).show();
+                } else if (result == BackupManager.IMPORT_CLOUD_INVALID) {
+                    Toast.makeText(this, "❌ Файл не является конфигом облака", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "❌ Ошибка импорта конфига облака", Toast.LENGTH_LONG).show();
+                }
+            });
+        }).start();
+    }
+
     private void startExportDb() {
         try {
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -400,7 +406,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ НОВОЕ: Запуск системного диалога выбора файла (импорт БД)
     private void startImportDb() {
         try {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -412,7 +417,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ НОВОЕ: Экспорт настроек (без истории)
     private void startExportSettings() {
         try {
             Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -428,7 +432,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ НОВОЕ: Импорт настроек (без истории)
     private void startImportSettings() {
         try {
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -440,7 +443,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ НОВОЕ: Очистка только истории (настройки и адреса сохраняются)
     private void showClearHistoryDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("🗑️ Очистить историю показаний")
@@ -456,11 +458,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 .show();
     }
 
-    // ═══════════════════════════════════════
-    // ✅ НОВОЕ: ОБЛАЧНЫЙ БЭКАП (пароль 0000 + подтверждения)
-    // ═══════════════════════════════════════
-
-    // ✅ Ввод пароля перед облачными операциями (переиспользуем UNLOCK_PASSWORD)
     private void showCloudPasswordDialog(Runnable onSuccess) {
         EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
@@ -484,7 +481,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 .show();
     }
 
-    // ✅ Создать бэкап: пароль → подтверждение → отправка
     private void startCloudSave() {
         showCloudPasswordDialog(() -> new AlertDialog.Builder(this)
                 .setTitle("☁️ Создать бэкап")
@@ -505,6 +501,9 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 } else if (result == CloudBackupManager.RESULT_BUILD_ERROR) {
                     logManager.logMsg("❌ Ошибка сборки бэкапа: " + err);
                     Toast.makeText(this, "❌ Ошибка сборки бэкапа: " + err, Toast.LENGTH_LONG).show();
+                } else if (result == CloudBackupManager.RESULT_NOT_CONFIGURED) {
+                    logManager.logMsg("❌ Облако не настроено: " + err);
+                    Toast.makeText(this, "❌ " + err, Toast.LENGTH_LONG).show();
                 } else {
                     logManager.logMsg("❌ Ошибка облачного бэкапа: " + err);
                     Toast.makeText(this, "❌ Не удалось создать бэкап: " + err, Toast.LENGTH_LONG).show();
@@ -513,7 +512,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }).start();
     }
 
-    // ✅ Загрузить бэкап: пароль → инфо с сервера → подтверждение → применение
     private void startCloudLoad() {
         showCloudPasswordDialog(this::performCloudLoad);
     }
@@ -521,13 +519,18 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private void performCloudLoad() {
         new Thread(() -> {
             final CloudBackupManager.LoadResult loadResult = cloudBackupManager.loadFromCloud();
+            final String err = cloudBackupManager.lastError;
             runOnUiThread(() -> {
+                if (loadResult.code == CloudBackupManager.RESULT_NOT_CONFIGURED) {
+                    Toast.makeText(this, "❌ " + err, Toast.LENGTH_LONG).show();
+                    return;
+                }
                 if (loadResult.code == CloudBackupManager.RESULT_NOT_FOUND) {
                     Toast.makeText(this, "❌ На сервере пока нет бэкапа", Toast.LENGTH_LONG).show();
                     return;
                 }
                 if (loadResult.code != CloudBackupManager.RESULT_OK || loadResult.payload == null) {
-                    Toast.makeText(this, "❌ Ошибка загрузки бэкапа с сервера", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "❌ Ошибка загрузки бэкапа: " + err, Toast.LENGTH_LONG).show();
                     return;
                 }
 
@@ -552,13 +555,14 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
     private void performCloudApply(JSONObject payload) {
         new Thread(() -> {
             final boolean ok = cloudBackupManager.applyPayload(payload);
+            final String err = cloudBackupManager.lastError;
             runOnUiThread(() -> {
                 if (ok) {
                     logManager.logMsg("☁️ Облачный бэкап применён");
                     Toast.makeText(this, "✅ Бэкап загружен. Перезапуск...", Toast.LENGTH_LONG).show();
                     new Handler(Looper.getMainLooper()).postDelayed(this::recreate, 1500);
                 } else {
-                    Toast.makeText(this, "❌ Ошибка применения бэкапа", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "❌ Ошибка применения бэкапа: " + err, Toast.LENGTH_LONG).show();
                 }
             });
         }).start();
@@ -625,17 +629,13 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ Обновлённое: Окно информации о WiFi
     private void showWifiInfoDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_wifi_info, null);
         builder.setView(dialogView);
-
         Button btnClose = dialogView.findViewById(R.id.btnWifiInfoClose);
         AlertDialog dialog = builder.create();
-
         btnClose.setOnClickListener(v -> dialog.dismiss());
-
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
@@ -643,17 +643,13 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         dialog.show();
     }
 
-    // ✅ Окно информации об адресе
     private void showAddressInfoDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_address_info, null);
         builder.setView(dialogView);
-
         Button btnClose = dialogView.findViewById(R.id.btnAddressInfoClose);
         AlertDialog dialog = builder.create();
-
         btnClose.setOnClickListener(v -> dialog.dismiss());
-
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
@@ -720,7 +716,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         btnTabService = findViewById(R.id.btnTabService);
         btnAddTestReading = findViewById(R.id.btnAddTestReading);
 
-        // ✅ НОВОЕ: кнопки фильтра истории
         btnPeriod = findViewById(R.id.btnPeriod);
         btnCalendar = findViewById(R.id.btnCalendar);
         btnSearchApply = findViewById(R.id.btnSearchApply);
@@ -760,7 +755,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         btnAutoSyncSettings = findViewById(R.id.btnAutoSyncSettings);
         switchAutoSync = findViewById(R.id.switchAutoSync);
 
-        // ✅ НОВОЕ: Привязка views резервного копирования
         backupHeader = findViewById(R.id.backupHeader);
         backupContent = findViewById(R.id.backupContent);
         backupToggle = findViewById(R.id.backupToggle);
@@ -770,9 +764,11 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         btnImportSettings = findViewById(R.id.btnImportSettings);
         btnClearHistoryDb = findViewById(R.id.btnClearHistoryDb);
 
-        // ✅ НОВОЕ: Привязка кнопок облачного бэкапа
         btnCloudSave = findViewById(R.id.btnCloudSave);
         btnCloudLoad = findViewById(R.id.btnCloudLoad);
+        etCloudUrl = findViewById(R.id.etCloudUrl);
+        etCloudApi = findViewById(R.id.etCloudApi);
+        etCloudPassword = findViewById(R.id.etCloudPassword);
 
         ivLogo = findViewById(R.id.ivLogo);
 
@@ -844,7 +840,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             }
         });
 
-        // ✅ Сайт
         layoutWebsite.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://sntprimorskoe.ru/"));
             startActivity(intent);
@@ -861,7 +856,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         testReadingHeader.setOnClickListener(v -> toggleTestReading());
         btnAddTestReading.setOnClickListener(v -> addTestReading());
 
-        // ✅ НОВОЕ: Аккордеон резервного копирования
         if (backupHeader != null) {
             backupHeader.setOnClickListener(v -> toggleBackup());
         }
@@ -898,7 +892,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         prefs.setTestReadingExpanded(testReadingExpanded);
     }
 
-    // ✅ НОВОЕ: Переключение аккордеона резервного копирования
     private void toggleBackup() {
         backupExpanded = !backupExpanded;
         updateBackupUI();
@@ -924,7 +917,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         testReadingToggle.setText(testReadingExpanded ? "🔼" : "🔽");
     }
 
-    // ✅ НОВОЕ: Обновление UI аккордеона резервного копирования
     private void updateBackupUI() {
         if (backupContent != null) {
             backupContent.setVisibility(backupExpanded ? View.VISIBLE : View.GONE);
@@ -943,6 +935,10 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         etTestUrl.setText(prefs.getTestUrl());
         etDeviceKey.setText(prefs.getDeviceKey());
 
+        etCloudUrl.setText(prefs.getCloudUrl());
+        etCloudApi.setText(prefs.getCloudApi());
+        etCloudPassword.setText(prefs.getCloudPassword());
+
         boolean isTabsVisible = prefs.isTabsUnlocked();
         tapCounter = prefs.getTapCounter();
 
@@ -956,8 +952,8 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         updateLogUI();
         updateSyncUI();
         updateTestReadingUI();
-        updateBackupUI(); // ✅ НОВОЕ
-        updatePeriodButton(); // ✅ НОВОЕ
+        updateBackupUI();
+        updatePeriodButton();
 
         if (networkContentService != null && networkToggleService != null) {
             networkContentService.setVisibility(networkServiceExpanded ? View.VISIBLE : View.GONE);
@@ -968,7 +964,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             switchAutoRead.setChecked(prefs.isAutoReadEnabled());
         }
 
-        // ✅ Загрузка состояния тумблера автосинхронизации
         if (switchAutoSync != null) {
             switchAutoSync.setChecked(prefs.isAutoSyncEnabled());
         }
@@ -989,7 +984,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         tvFooter.setOnClickListener(v -> handleFooterTap());
         btnAddressList.setOnClickListener(v -> showAddressList());
 
-        // ✅ Обработчик 3-х кликов на "Адрес:"
         if (tvAddressLabel != null) {
             tvAddressLabel.setOnClickListener(v -> handleAddressTap());
         }
@@ -998,7 +992,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             btnWifiInfo.setOnClickListener(v -> showWifiInfoDialog());
         }
 
-        // ✅ НОВОЕ: Обработчик кнопки Инфо рядом с Адресом
         if (btnAddressInfo != null) {
             btnAddressInfo.setOnClickListener(v -> showAddressInfoDialog());
         }
@@ -1007,7 +1000,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             btnWifiScan.setOnClickListener(v -> openWifiSettings());
         }
 
-        // ✅ Обработчики для автосчитывания
         if (btnAutoRead != null) {
             btnAutoRead.setOnClickListener(v -> showAutoReadBottomSheet());
         }
@@ -1024,17 +1016,14 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             });
         }
 
-        // ✅ Кнопка быстрой синхронизации
         if (btnQuickSync != null) {
             btnQuickSync.setOnClickListener(v -> syncWithServer());
         }
 
-        // ✅ Кнопка настроек авто-синхронизации
         if (btnAutoSyncSettings != null) {
             btnAutoSyncSettings.setOnClickListener(v -> showAutoSyncSettingsDialog());
         }
 
-        // ✅ Тумблер автосинхронизации
         if (switchAutoSync != null) {
             switchAutoSync.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 prefs.setAutoSyncEnabled(isChecked);
@@ -1048,7 +1037,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             });
         }
 
-        // ✅ НОВОЕ: Кнопки резервного копирования БД
         if (btnExportDb != null) {
             btnExportDb.setOnClickListener(v -> startExportDb());
         }
@@ -1056,7 +1044,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             btnImportDb.setOnClickListener(v -> startImportDb());
         }
 
-        // ✅ НОВОЕ: Кнопки резервного копирования настроек
         if (btnExportSettings != null) {
             btnExportSettings.setOnClickListener(v -> startExportSettings());
         }
@@ -1064,12 +1051,10 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             btnImportSettings.setOnClickListener(v -> startImportSettings());
         }
 
-        // ✅ НОВОЕ: Кнопка очистки только истории
         if (btnClearHistoryDb != null) {
             btnClearHistoryDb.setOnClickListener(v -> showClearHistoryDialog());
         }
 
-        // ✅ НОВОЕ: Кнопки облачного бэкапа
         if (btnCloudSave != null) {
             btnCloudSave.setOnClickListener(v -> startCloudSave());
         }
@@ -1077,7 +1062,10 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
             btnCloudLoad.setOnClickListener(v -> startCloudLoad());
         }
 
-        // ✅ НОВОЕ: Кнопки фильтра истории
+        etCloudUrl.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) saveCloudSettings(); });
+        etCloudApi.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) saveCloudSettings(); });
+        etCloudPassword.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) saveCloudSettings(); });
+
         if (btnPeriod != null) {
             btnPeriod.setOnClickListener(v -> showPeriodMenu(v));
         }
@@ -1115,7 +1103,12 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         etDeviceKey.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) saveSyncSettings(); });
     }
 
-    // ✅ НОВЫЙ МЕТОД: визуальная блокировка кнопок ручного чтения (БЕЗ тостов)
+    private void saveCloudSettings() {
+        prefs.setCloudUrl(etCloudUrl.getText().toString().trim());
+        prefs.setCloudApi(etCloudApi.getText().toString().trim());
+        prefs.setCloudPassword(etCloudPassword.getText().toString().trim());
+    }
+
     public void setReadButtonsLocked(boolean locked) {
         if (btnRead != null) {
             btnRead.setEnabled(!locked);
@@ -1128,7 +1121,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ Обработка 3-х кликов на "Адрес:"
     private void handleAddressTap() {
         addressTapCounter++;
         int remaining = TAPS_TO_IP_SETTINGS - addressTapCounter;
@@ -1140,7 +1132,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ Быстрый диалог настроек IP/порта
     private void showQuickIpPortDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_quick_ip_port, null);
@@ -1182,7 +1173,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         dialog.show();
     }
 
-    // ✅ Диалог настроек авто-синхронизации
     private void showAutoSyncSettingsDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_auto_sync_settings, null);
@@ -1237,7 +1227,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         dialog.show();
     }
 
-    // ✅ Планирование авто-синхронизации
     private void scheduleAutoSync(int hour, int minute, int intervalHours) {
         workManager.cancelUniqueWork("AutoSyncWork");
 
@@ -1264,7 +1253,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 String.format("%02d:%02d", hour, minute));
     }
 
-    // ✅ Расчет задержки до первого запуска
     private long calculateInitialDelay(int hour, int minute) {
         Calendar now = Calendar.getInstance();
         Calendar nextRun = Calendar.getInstance();
@@ -1278,7 +1266,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         return nextRun.getTimeInMillis() - now.getTimeInMillis();
     }
 
-    // ✅ Отмена автосинхронизации
     private void cancelAutoSync() {
         if (workManager != null) {
             workManager.cancelUniqueWork("AutoSyncWork");
@@ -1286,7 +1273,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ Открытие BottomSheet с настройками автосчитывания
     private void showAutoReadBottomSheet() {
         AutoReadBottomSheet bottomSheet = new AutoReadBottomSheet();
         bottomSheet.setOnNetworkSelectedListener((ssid, names) -> {
@@ -1350,7 +1336,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         prefs.setApiPath(etApiPath.getText().toString().trim());
         prefs.setTestUrl(etTestUrl.getText().toString().trim());
         prefs.setDeviceKey(etDeviceKey.getText().toString().trim());
-        Toast.makeText(this, "✅ Настройки синхронизации сохранены", Toast.LENGTH_SHORT).show();
     }
 
     private void testServerConnection() {
@@ -1374,27 +1359,24 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         syncManager.syncWithServer(serverUrl, apiPath, deviceKey);
     }
 
-    // ✅ ИСПРАВЛЕНО: защита от повторных нажатий — молча игнорируем, блокируем кнопки
     private void readEnergy() {
         if (readingManager.isBusy() || (autoReadManager != null && autoReadManager.isReading())) {
-            return; // ✅ БЕЗ тоста
+            return;
         }
         setReadButtonsLocked(true);
         prefs.setAddress(parseIntSafe(etAddr.getText().toString(), 1));
         updateStatus();
         readingManager.readEnergy(prefs.getIp(), prefs.getPort(), prefs.getAddress(),
                 () -> {
-                    // ✅ Разблокируем только если автосчитывание не перехватило кнопки
                     if (autoReadManager == null || !autoReadManager.isReading()) {
                         setReadButtonsLocked(false);
                     }
                 });
     }
 
-    // ✅ ИСПРАВЛЕНО: защита от повторных нажатий — молча игнорируем, блокируем кнопки
     private void readDateTime() {
         if (readingManager.isBusy() || (autoReadManager != null && autoReadManager.isReading())) {
-            return; // ✅ БЕЗ тоста
+            return;
         }
         setReadButtonsLocked(true);
         int addr = parseIntSafe(etAddr.getText().toString(), 1);
@@ -1408,7 +1390,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
 
     public void triggerAutoRead(int address) {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            // ✅ Молча игнорируем, если чтение уже идёт
             if (readingManager.isBusy() || (autoReadManager != null && autoReadManager.isReading())) {
                 return;
             }
@@ -1437,7 +1418,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ НОВОЕ: выпадающее меню выбора периода
     private void showPeriodMenu(View anchor) {
         PopupMenu popup = new PopupMenu(this, anchor);
         popup.getMenu().add(0, PERIOD_TODAY, 0, "Сегодня");
@@ -1455,17 +1435,14 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         popup.show();
     }
 
-    // ✅ НОВОЕ: два календаря подряд (Начало → Конец) с защитой от перевёртыша
     private void showDateRangePicker() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
         Calendar now = Calendar.getInstance();
 
-        // ── ШАГ 1: выбор НАЧАЛА периода ──
         DatePickerDialog startDialog = new DatePickerDialog(this,
                 (view, year, month, dayOfMonth) -> {
                     Calendar startCal = Calendar.getInstance();
                     startCal.set(year, month, dayOfMonth);
-                    // обнуляем время до начала суток для корректного minDate
                     startCal.set(Calendar.HOUR_OF_DAY, 0);
                     startCal.set(Calendar.MINUTE, 0);
                     startCal.set(Calendar.SECOND, 0);
@@ -1473,7 +1450,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                     final long startMillis = startCal.getTimeInMillis();
                     final String fromDate = sdf.format(startCal.getTime());
 
-                    // ── ШАГ 2: выбор КОНЦА периода ──
                     DatePickerDialog endDialog = new DatePickerDialog(this,
                             (view2, year2, month2, dayOfMonth2) -> {
                                 Calendar endCal = Calendar.getInstance();
@@ -1487,7 +1463,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
 
                                 String from = fromDate;
                                 String to = toDate;
-                                // ✅ Тихая страховка: если конец раньше начала — меняем местами (без тостов)
                                 if (endMillis < startMillis) {
                                     from = toDate;
                                     to = fromDate;
@@ -1504,7 +1479,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                             startCal.get(Calendar.DAY_OF_MONTH));
 
                     endDialog.setTitle("📅 Конец периода");
-                    // ✅ СТАНДАРТНАЯ ЗАЩИТА: даты раньше начала недоступны для выбора
                     endDialog.getDatePicker().setMinDate(startMillis);
                     endDialog.show();
                 },
@@ -1514,7 +1488,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         startDialog.show();
     }
 
-    // ✅ НОВОЕ: обновление текста кнопки периода
     private void updatePeriodButton() {
         if (btnPeriod == null) return;
         switch (currentPeriodMode) {
@@ -1537,7 +1510,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ НОВОЕ: сброс поиска и периода
     private void resetSearch() {
         if (etSearch != null) {
             etSearch.setText("");
@@ -1549,7 +1521,6 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         loadHistoryWithFilter();
     }
 
-    // ✅ ОБНОВЛЕНО: единый поиск + период (включая диапазон дат)
     public void loadHistoryWithFilter() {
         String search = etSearch != null ? etSearch.getText().toString().trim() : "";
 

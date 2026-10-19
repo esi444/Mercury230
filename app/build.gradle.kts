@@ -14,8 +14,8 @@ android {
         applicationId = "com.sv.mercurytarrifs"
         minSdk = 23
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.4.5"
+        versionCode = 13
+        versionName = "1.4.5a"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

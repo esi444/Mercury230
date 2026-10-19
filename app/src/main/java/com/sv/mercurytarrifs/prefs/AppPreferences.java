@@ -3,6 +3,8 @@ package com.sv.mercurytarrifs.prefs;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.UUID;
+
 public class AppPreferences {
     private static final String PREFS_NAME = "mercury_prefs";
     private static final String KEY_IP = "ip";
@@ -26,25 +28,27 @@ public class AppPreferences {
     private static final String KEY_TEST_SERIAL = "test_serial";
     private static final String KEY_TEST_ADDR = "test_addr";
     private static final String KEY_LAST_SELECTED_ADDRESS = "last_selected_address";
-
-    // ✅ НОВЫЕ: Для функции Автосчитывания
     private static final String KEY_AUTO_READ_ENABLED = "auto_read_enabled";
     private static final String KEY_AUTO_READ_INTERVAL = "auto_read_interval";
-
-    // ✅ НОВЫЕ: Для авто-синхронизации
     private static final String KEY_AUTO_SYNC_HOUR = "auto_sync_hour";
     private static final String KEY_AUTO_SYNC_MINUTE = "auto_sync_minute";
     private static final String KEY_AUTO_SYNC_PERIOD = "auto_sync_period";
     private static final String KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled";
 
+    // ✅ НОВОЕ: настройки облачного бэкапа (вводятся вручную, пустые по умолчанию)
+    private static final String KEY_CLOUD_URL = "cloud_url";
+    private static final String KEY_CLOUD_API = "cloud_api";
+    private static final String KEY_CLOUD_PASSWORD = "cloud_password";
+
     private static final String DEFAULT_IP = "10.10.100.254";
     private static final int DEFAULT_PORT = 8899;
     private static final int DEFAULT_ADDRESS = 1;
-    private static final String DEFAULT_SERVER_URL = "http://a96497eh.beget.tech";
-    private static final String DEFAULT_API_PATH = "/pokaz/api/save_reading.php";
-    private static final String DEFAULT_TEST_URL = "/pokaz/api/test.php";
-    private static final String DEFAULT_DEVICE_KEY = "mobile";
     private static final int DEFAULT_AUTO_READ_INTERVAL = 200;
+
+    // ✅ ПУСТЫЕ по умолчанию (подтянутся из облачного бэкапа или вводятся вручную)
+    private static final String DEFAULT_SERVER_URL = "";
+    private static final String DEFAULT_API_PATH = "";
+    private static final String DEFAULT_TEST_URL = "";
 
     private final SharedPreferences prefs;
 
@@ -70,8 +74,26 @@ public class AppPreferences {
     public String getTestUrl() { return prefs.getString(KEY_TEST_URL, DEFAULT_TEST_URL); }
     public void setTestUrl(String url) { prefs.edit().putString(KEY_TEST_URL, url).apply(); }
 
-    public String getDeviceKey() { return prefs.getString(KEY_DEVICE_KEY, DEFAULT_DEVICE_KEY); }
+    // ✅ device_key генерируется автоматически при первом обращении (UUID)
+    public String getDeviceKey() {
+        String key = prefs.getString(KEY_DEVICE_KEY, null);
+        if (key == null || key.isEmpty()) {
+            key = UUID.randomUUID().toString().substring(0, 8);
+            setDeviceKey(key);
+        }
+        return key;
+    }
     public void setDeviceKey(String key) { prefs.edit().putString(KEY_DEVICE_KEY, key).apply(); }
+
+    // ✅ НОВОЕ: настройки облачного бэкапа
+    public String getCloudUrl() { return prefs.getString(KEY_CLOUD_URL, ""); }
+    public void setCloudUrl(String url) { prefs.edit().putString(KEY_CLOUD_URL, url).apply(); }
+
+    public String getCloudApi() { return prefs.getString(KEY_CLOUD_API, ""); }
+    public void setCloudApi(String path) { prefs.edit().putString(KEY_CLOUD_API, path).apply(); }
+
+    public String getCloudPassword() { return prefs.getString(KEY_CLOUD_PASSWORD, ""); }
+    public void setCloudPassword(String pass) { prefs.edit().putString(KEY_CLOUD_PASSWORD, pass).apply(); }
 
     public boolean isTabsUnlocked() { return prefs.getBoolean(KEY_TABS_UNLOCKED, false); }
     public void setTabsUnlocked(boolean unlocked) { prefs.edit().putBoolean(KEY_TABS_UNLOCKED, unlocked).apply(); }
@@ -115,19 +137,16 @@ public class AppPreferences {
     public void setLastSelectedAddress(int address) {
         prefs.edit().putInt(KEY_LAST_SELECTED_ADDRESS, address).apply();
     }
-
     public int getLastSelectedAddress() {
         return prefs.getInt(KEY_LAST_SELECTED_ADDRESS, -1);
     }
 
-    // ✅ НОВЫЕ: Для функции Автосчитывания
     public boolean isAutoReadEnabled() { return prefs.getBoolean(KEY_AUTO_READ_ENABLED, false); }
     public void setAutoReadEnabled(boolean enabled) { prefs.edit().putBoolean(KEY_AUTO_READ_ENABLED, enabled).apply(); }
 
     public int getAutoReadInterval() { return prefs.getInt(KEY_AUTO_READ_INTERVAL, DEFAULT_AUTO_READ_INTERVAL); }
     public void setAutoReadInterval(int interval) { prefs.edit().putInt(KEY_AUTO_READ_INTERVAL, interval).apply(); }
 
-    // ✅ НОВЫЕ: Методы для авто-синхронизации
     public int getAutoSyncHour() { return prefs.getInt(KEY_AUTO_SYNC_HOUR, 16); }
     public void setAutoSyncHour(int hour) { prefs.edit().putInt(KEY_AUTO_SYNC_HOUR, hour).apply(); }
 

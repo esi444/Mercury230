@@ -27,12 +27,10 @@ public class CloudBackupManager {
     public static final int RESULT_NOT_FOUND = 2;
     public static final int RESULT_NO_CONNECTION = -1;
     public static final int RESULT_BUILD_ERROR = -2;
+    public static final int RESULT_NOT_CONFIGURED = -3; // ✅ не заполнены URL/API/пароль
 
-    private static final String CLOUD_API_PATH = "/pokaz/api/cloud_backup.php";
-    private static final String CLOUD_PASSWORD = "0000";
     private static final String PAYLOAD_TYPE = "mercury_cloud_backup";
 
-    // ✅ Браузерный User-Agent — помогает пройти файрвол хостинга
     private static final String USER_AGENT =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -65,10 +63,28 @@ public class CloudBackupManager {
         public int networksCount = 0;
     }
 
+    // ✅ НОВОЕ: читаем настройки облака из prefs (вводятся вручную в аккордеоне)
+    // возвращает null, если что-то не заполнено
+    private String[] getCloudConfig() {
+        String url = prefs.getCloudUrl().trim();
+        String api = prefs.getCloudApi().trim();
+        String pass = prefs.getCloudPassword().trim();
+        if (url.isEmpty() || api.isEmpty() || pass.isEmpty()) return null;
+        if (url.endsWith("/")) url = url.substring(0, url.length() - 1);
+        if (!api.startsWith("/")) api = "/" + api;
+        return new String[]{url, api, pass};
+    }
+
     // ═══════════════════════════════════════
-    // ✅ СОЗДАТЬ БЭКАП: всегда POST в виде HTML-формы
+    // ✅ СОЗДАТЬ БЭКАП: POST в виде HTML-формы
     // ═══════════════════════════════════════
     public int saveToCloud() {
+        String[] cfg = getCloudConfig();
+        if (cfg == null) {
+            lastError = "заполните URL, API и пароль облака";
+            return RESULT_NOT_CONFIGURED;
+        }
+
         JSONObject payload;
         try {
             payload = buildPayload();
@@ -79,20 +95,17 @@ public class CloudBackupManager {
 
         HttpURLConnection conn = null;
         try {
-            URL url = new URL(prefs.getServerUrl() + CLOUD_API_PATH +
-                    "?action=save&password=" + CLOUD_PASSWORD);
+            URL url = new URL(cfg[0] + cfg[1] +
+                    "?action=save&password=" + URLEncoder.encode(cfg[2], "UTF-8"));
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("User-Agent", USER_AGENT);
-            // ✅ Ключевой момент: отправляем как обычную форму, а не как JSON
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             conn.setDoOutput(true);
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(15000);
 
-            // ✅ Формируем тело запроса как форму: payload=...
             String body = "payload=" + URLEncoder.encode(payload.toString(), "UTF-8");
-
             OutputStream os = conn.getOutputStream();
             os.write(body.getBytes("UTF-8"));
             os.flush();
@@ -114,13 +127,19 @@ public class CloudBackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ ЗАГРУЗИТЬ БЭКАП (GET — здесь всегда работает, т.к. только читаем)
+    // ✅ ЗАГРУЗИТЬ БЭКАП
     // ═══════════════════════════════════════
     public LoadResult loadFromCloud() {
+        String[] cfg = getCloudConfig();
+        if (cfg == null) {
+            lastError = "заполните URL, API и пароль облака";
+            return new LoadResult(RESULT_NOT_CONFIGURED, null);
+        }
+
         HttpURLConnection conn = null;
         try {
-            URL url = new URL(prefs.getServerUrl() + CLOUD_API_PATH +
-                    "?action=get&password=" + CLOUD_PASSWORD);
+            URL url = new URL(cfg[0] + cfg[1] +
+                    "?action=get&password=" + URLEncoder.encode(cfg[2], "UTF-8"));
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("User-Agent", USER_AGENT);
@@ -201,6 +220,15 @@ public class CloudBackupManager {
                     dbHelper.addAutoReadConfig(ssid, pairs);
                 }
             }
+
+            // ✅ Настройки сервера синхронизации из бэкапа (device_key НЕ трогаем)
+            String serverUrl = payload.optString("server_url", "");
+            String apiPath = payload.optString("api_path", "");
+            String testUrl = payload.optString("test_url", "");
+            if (!serverUrl.isEmpty()) prefs.setServerUrl(serverUrl);
+            if (!apiPath.isEmpty()) prefs.setApiPath(apiPath);
+            if (!testUrl.isEmpty()) prefs.setTestUrl(testUrl);
+
             return true;
         } catch (Exception e) {
             lastError = "применение: " + e.getMessage();
@@ -219,6 +247,11 @@ public class CloudBackupManager {
         meta.put("created", new SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
         meta.put("author", prefs.getDeviceKey());
         root.put("meta", meta);
+
+        // ✅ Настройки сервера синхронизации (чтобы другие телефоны подтянули их)
+        root.put("server_url", prefs.getServerUrl());
+        root.put("api_path", prefs.getApiPath());
+        root.put("test_url", prefs.getTestUrl());
 
         JSONArray subs = new JSONArray();
         for (HistoryDatabase.SubscriberRow row : dbHelper.getSubscribersUnion()) {

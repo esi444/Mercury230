@@ -24,12 +24,14 @@ public class BackupManager {
     public static final int IMPORT_INVALID_FILE = 1;
     public static final int IMPORT_ERROR = 2;
 
-    // ✅ Имя файла БД должно совпадать с HistoryDatabase.DATABASE_NAME
+    // ✅ НОВОЕ: коды результата импорта конфига облака
+    public static final int IMPORT_CLOUD_OK = 10;
+    public static final int IMPORT_CLOUD_INVALID = 11;
+
     private static final String DB_FILE_NAME = "history.db";
-    // ✅ Магический заголовок SQLite (16 байт)
     private static final byte[] SQLITE_MAGIC = "SQLite format 3\u0000".getBytes();
-    // ✅ Маркер файла настроек
     private static final String SETTINGS_TYPE = "mercury_settings";
+    private static final String CLOUD_CONFIG_TYPE = "mercury_cloud_config";
 
     private final Context context;
     private final HistoryDatabase dbHelper;
@@ -42,7 +44,7 @@ public class BackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ БАЗА ДАННЫХ (полная копия с историей)
+    // ✅ БАЗА ДАННЫХ
     // ═══════════════════════════════════════
 
     public boolean exportDatabase(Uri destUri) {
@@ -64,7 +66,6 @@ public class BackupManager {
         File dbFile = context.getDatabasePath(DB_FILE_NAME);
         if (dbFile == null) return IMPORT_ERROR;
         try {
-            // ✅ ОБЯЗАТЕЛЬНО закрываем соединение перед заменой файла
             dbHelper.close();
 
             try (InputStream in = context.getContentResolver().openInputStream(srcUri);
@@ -72,7 +73,6 @@ public class BackupManager {
                 copyStream(in, out);
             }
 
-            // ✅ Удаляем возможные WAL/SHM файлы старого соединения
             File wal = new File(dbFile.getPath() + "-wal");
             File shm = new File(dbFile.getPath() + "-shm");
             if (wal.exists()) wal.delete();
@@ -86,7 +86,7 @@ public class BackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ НАСТРОЙКИ (без истории): JSON-файл
+    // ✅ НАСТРОЙКИ
     // ═══════════════════════════════════════
 
     public boolean exportSettings(Uri destUri) {
@@ -96,7 +96,6 @@ public class BackupManager {
             root.put("version", 1);
             root.put("created", new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date()));
 
-            // ✅ Все настройки приложения
             JSONObject s = new JSONObject();
             s.put("ip", prefs.getIp());
             s.put("port", prefs.getPort());
@@ -119,7 +118,6 @@ public class BackupManager {
             s.put("tabsUnlocked", prefs.isTabsUnlocked());
             root.put("settings", s);
 
-            // ✅ Сети автосчитывания со списками адресов
             JSONArray networks = new JSONArray();
             List<String> ssids = dbHelper.getAllConfiguredSsids();
             for (String ssid : ssids) {
@@ -153,6 +151,7 @@ public class BackupManager {
         try {
             InputStream in = context.getContentResolver().openInputStream(srcUri);
             if (in == null) return IMPORT_ERROR;
+
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             byte[] buf = new byte[8192];
             int len;
@@ -162,7 +161,6 @@ public class BackupManager {
             JSONObject root = new JSONObject(new String(bos.toByteArray(), "UTF-8"));
             if (!SETTINGS_TYPE.equals(root.optString("type"))) return IMPORT_INVALID_FILE;
 
-            // ✅ Восстанавливаем настройки
             JSONObject s = root.optJSONObject("settings");
             if (s != null) {
                 if (s.has("ip")) prefs.setIp(s.getString("ip"));
@@ -186,7 +184,6 @@ public class BackupManager {
                 if (s.has("tabsUnlocked")) prefs.setTabsUnlocked(s.getBoolean("tabsUnlocked"));
             }
 
-            // ✅ Восстанавливаем сети автосчитывания (перезаписываются по SSID)
             JSONArray networks = root.optJSONArray("auto_read");
             if (networks != null) {
                 for (int i = 0; i < networks.length(); i++) {
@@ -203,7 +200,69 @@ public class BackupManager {
                     dbHelper.addAutoReadConfig(ssid, pairs);
                 }
             }
+
             return IMPORT_OK;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return IMPORT_ERROR;
+        }
+    }
+
+    // ═══════════════════════════════════════
+    // ✅ НОВОЕ: УМНЫЙ ИМПОРТ КОНФИГА ОБЛАКА
+    // ═══════════════════════════════════════
+
+    // ✅ Чтение поля "type" из JSON-файла для определения формата
+    public String readJsonType(Uri uri) {
+        try {
+            InputStream in = context.getContentResolver().openInputStream(uri);
+            if (in == null) return "";
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) > 0) bos.write(buf, 0, len);
+            in.close();
+
+            JSONObject json = new JSONObject(new String(bos.toByteArray(), "UTF-8"));
+            return json.optString("type", "");
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    // ✅ Импорт конфига облака (только URL + API, БЕЗ пароля)
+    public int importCloudConfig(Uri srcUri) {
+        try {
+            InputStream in = context.getContentResolver().openInputStream(srcUri);
+            if (in == null) return IMPORT_ERROR;
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = in.read(buf)) > 0) bos.write(buf, 0, len);
+            in.close();
+
+            JSONObject json = new JSONObject(new String(bos.toByteArray(), "UTF-8"));
+
+            if (!CLOUD_CONFIG_TYPE.equals(json.optString("type", ""))) {
+                return IMPORT_CLOUD_INVALID;
+            }
+
+            String cloudUrl = json.optString("cloud_url", "").trim();
+            String cloudApi = json.optString("cloud_api", "").trim();
+
+            if (cloudUrl.isEmpty() || cloudApi.isEmpty()) {
+                return IMPORT_CLOUD_INVALID;
+            }
+
+            if (cloudUrl.endsWith("/")) cloudUrl = cloudUrl.substring(0, cloudUrl.length() - 1);
+            if (!cloudApi.startsWith("/")) cloudApi = "/" + cloudApi;
+
+            prefs.setCloudUrl(cloudUrl);
+            prefs.setCloudApi(cloudApi);
+
+            return IMPORT_CLOUD_OK;
         } catch (Exception e) {
             e.printStackTrace();
             return IMPORT_ERROR;
@@ -214,7 +273,6 @@ public class BackupManager {
     // ✅ СЛУЖЕБНЫЕ МЕТОДЫ
     // ═══════════════════════════════════════
 
-    // ✅ Проверка: действительно ли файл является базой SQLite
     private boolean isSqliteFile(Uri uri) {
         try (InputStream in = context.getContentResolver().openInputStream(uri)) {
             if (in == null) return false;

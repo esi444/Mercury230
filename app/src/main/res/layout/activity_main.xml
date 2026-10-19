@@ -1013,12 +1013,11 @@
                                 android:layout_width="0dp"
                                 android:layout_weight="1"
                                 android:layout_height="wrap_content"
-                                android:text="http://a96497eh.beget.tech"
                                 android:inputType="textUri"
                                 android:background="#222"
                                 android:textColor="#fff"
                                 android:padding="10dp"
-                                android:hint="http://ваш-ip"/>
+                                android:hint="http://"/>
                         </LinearLayout>
 
                         <LinearLayout
@@ -1040,12 +1039,11 @@
                                 android:layout_width="0dp"
                                 android:layout_weight="1"
                                 android:layout_height="wrap_content"
-                                android:text="/pokaz/api/save_reading.php"
                                 android:inputType="text"
                                 android:background="#222"
                                 android:textColor="#fff"
                                 android:padding="10dp"
-                                android:hint="/pokaz/api/save_reading.php"/>
+                                android:hint="/"/>
                         </LinearLayout>
 
                         <LinearLayout
@@ -1067,12 +1065,11 @@
                                 android:layout_width="0dp"
                                 android:layout_weight="1"
                                 android:layout_height="wrap_content"
-                                android:text="/pokaz/api/test.php"
                                 android:inputType="text"
                                 android:background="#222"
                                 android:textColor="#FFB74D"
                                 android:padding="10dp"
-                                android:hint="/pokaz/api/test.php"/>
+                                android:hint="/"/>
                         </LinearLayout>
 
                         <LinearLayout
@@ -1404,18 +1401,6 @@
                         android:background="#2a1a3a"
                         android:padding="15dp">
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Экспорт БД — полная копия с историей показаний.
-Экспорт настроек — сеть, адреса, сервер и тумблеры БЕЗ истории.
-Очистка истории — настройки и адреса автосчитывания сохраняются.
-Облако — общая адресная книга и сети автосчитывания команды."
-                            android:textColor="#aaaaaa"
-                            android:textSize="12sp"
-                            android:lineSpacingExtra="2dp"
-                            android:layout_marginBottom="10dp"/>
-
                         <!-- ✅ РЯД 1: База данных -->
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -1512,6 +1497,88 @@
                             android:background="#333333"
                             android:layout_marginTop="12dp"
                             android:layout_marginBottom="12dp"/>
+
+                        <!-- ✅ НОВОЕ: Настройки облачного бэкапа (вводятся вручную) -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:layout_width="100dp"
+                                android:layout_height="wrap_content"
+                                android:text="☁️ URL:"
+                                android:textColor="#BB86FC"
+                                android:textStyle="bold"
+                                android:layout_gravity="center_vertical"/>
+
+                            <EditText
+                                android:id="@+id/etCloudUrl"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:hint="http://"
+                                android:inputType="textUri"
+                                android:background="#222"
+                                android:textColor="#fff"
+                                android:textColorHint="#666666"
+                                android:padding="10dp"/>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:layout_width="100dp"
+                                android:layout_height="wrap_content"
+                                android:text="📍 API:"
+                                android:textColor="#BB86FC"
+                                android:textStyle="bold"
+                                android:layout_gravity="center_vertical"/>
+
+                            <EditText
+                                android:id="@+id/etCloudApi"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:hint="/"
+                                android:inputType="text"
+                                android:background="#222"
+                                android:textColor="#fff"
+                                android:textColorHint="#666666"
+                                android:padding="10dp"/>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="10dp">
+
+                            <TextView
+                                android:layout_width="100dp"
+                                android:layout_height="wrap_content"
+                                android:text="🔑 Пароль:"
+                                android:textColor="#BB86FC"
+                                android:textStyle="bold"
+                                android:layout_gravity="center_vertical"/>
+
+                            <EditText
+                                android:id="@+id/etCloudPassword"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:hint="На сервере"
+                                android:inputType="textVisiblePassword"
+                                android:background="#222"
+                                android:textColor="#fff"
+                                android:textColorHint="#666666"
+                                android:padding="10dp"/>
+                        </LinearLayout>
 
                         <!-- ✅ НОВОЕ: РЯД 4: Облачный бэкап -->
                         <LinearLayout
