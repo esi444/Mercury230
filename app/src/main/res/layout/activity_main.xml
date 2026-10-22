@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Заголовок -->
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -26,7 +26,7 @@
             android:gravity="center"
             android:layout_marginBottom="4dp"/>
 
-        <!-- ✅ Строка статуса WiFi -->
+
         <LinearLayout
             android:id="@+id/wifiStatusRow"
             android:layout_width="match_parent"
@@ -70,7 +70,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"/>
         </LinearLayout>
 
-        <!-- ✅ Кнопка выбора сети -->
+
         <Button
             android:id="@+id/btnWifiScan"
             android:layout_width="match_parent"
@@ -81,7 +81,7 @@
             android:layout_marginTop="4dp"
             android:layout_marginBottom="8dp"/>
 
-        <!-- Вкладки -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -126,13 +126,13 @@
                 android:minHeight="48dp"/>
         </LinearLayout>
 
-        <!-- Контейнер для вкладок -->
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp">
 
-            <!-- Вкладка Показания -->
+
             <LinearLayout
                 android:id="@+id/tabReadings"
                 android:layout_width="match_parent"
@@ -150,7 +150,7 @@
                     android:gravity="center"
                     android:layout_marginBottom="8dp"/>
 
-                <!-- Адрес счётчика -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -165,7 +165,7 @@
                         android:orientation="horizontal"
                         android:layout_marginBottom="10dp">
 
-                        <!-- ✅ Кнопка Инфо слева от Адреса -->
+
                         <TextView
                             android:id="@+id/btnAddressInfo"
                             android:layout_width="28dp"
@@ -240,7 +240,7 @@
                         android:visibility="gone"/>
                 </LinearLayout>
 
-                <!-- Блок результатов -->
+
                 <LinearLayout
                     android:id="@+id/layoutResults"
                     android:layout_width="match_parent"
@@ -281,7 +281,7 @@
                             android:padding="10dp"/>
                     </LinearLayout>
 
-                    <!-- ТАРИФ 1 -->
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -313,7 +313,7 @@
                             android:layout_marginStart="4dp"/>
                     </LinearLayout>
 
-                    <!-- ТАРИФ 2 -->
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -346,7 +346,7 @@
                             android:layout_marginStart="4dp"/>
                     </LinearLayout>
 
-                    <!-- СУММА -->
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -380,7 +380,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Информационный блок -->
+
                 <LinearLayout
                     android:id="@+id/layoutInfo"
                     android:layout_width="match_parent"
@@ -434,7 +434,7 @@
                         android:lineSpacingExtra="2dp"/>
                 </LinearLayout>
 
-                <!-- FOOTER -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -544,7 +544,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Вкладка История -->
+
             <LinearLayout
                 android:id="@+id/tabHistory"
                 android:layout_width="match_parent"
@@ -552,7 +552,7 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- История показаний -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -597,7 +597,7 @@
                         android:background="#1a1a1a"
                         android:padding="15dp">
 
-                        <!-- ✅ НОВОЕ: Единое поле поиска + сброс -->
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -636,7 +636,7 @@
                                     android:padding="5dp"/>
                             </LinearLayout>
 
-                            <!-- ✅ Кнопка сброса поиска -->
+
                             <Button
                                 android:id="@+id/btnResetSearch"
                                 android:layout_width="40dp"
@@ -650,7 +650,7 @@
                                 android:gravity="center"/>
                         </LinearLayout>
 
-                        <!-- ✅ НОВОЕ: Период + календарь + поиск -->
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -711,7 +711,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Лог обмена -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -770,7 +770,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Вкладка Сервис -->
+
             <LinearLayout
                 android:id="@+id/tabService"
                 android:layout_width="match_parent"
@@ -778,7 +778,7 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- ✅ Автосчитывание показаний -->
+
                 <LinearLayout
                     android:id="@+id/btnAutoRead"
                     android:layout_width="match_parent"
@@ -809,7 +809,7 @@
                         android:checked="false"/>
                 </LinearLayout>
 
-                <!-- ✅ Сетевые настройки accordion -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -916,7 +916,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- ✅ ИСПРАВЛЕНО: Настройки синхронизации с контейнером аккордеона -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -945,7 +945,7 @@
                             android:maxLines="1"
                             android:ellipsize="end"/>
 
-                        <!-- ✅ КНОПКА БЫСТРОЙ СИНХРОНИЗАЦИИ -->
+
                         <ImageButton
                             android:id="@+id/btnQuickSync"
                             android:layout_width="40dp"
@@ -957,7 +957,7 @@
                             android:scaleX="-1"
                             app:tint="#4CAF50"/>
 
-                        <!-- ✅ КНОПКА НАСТРОЕК АВТО-СИНХРОНИЗАЦИИ -->
+
                         <ImageButton
                             android:id="@+id/btnAutoSyncSettings"
                             android:layout_width="40dp"
@@ -968,7 +968,7 @@
                             android:contentDescription="Настройки авто-синхронизации"
                             app:tint="#FF9800"/>
 
-                        <!-- ✅ ТУМБЛЕР АВТОСИНХРОНИЗАЦИИ (ТЕПЕРЬ СПРАВА ОТ КНОПКИ НАСТРОЕК) -->
+
                         <Switch
                             android:id="@+id/switchAutoSync"
                             android:layout_width="wrap_content"
@@ -1142,7 +1142,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Тестовое показание -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -1354,7 +1354,7 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- ✅ НОВОЕ: Резервное копирование (accordion) -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -1401,7 +1401,7 @@
                         android:background="#2a1a3a"
                         android:padding="15dp">
 
-                        <!-- ✅ РЯД 1: База данных -->
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -1431,7 +1431,7 @@
                                 android:minHeight="48dp"/>
                         </LinearLayout>
 
-                        <!-- ✅ РЯД 2: Настройки (без истории) -->
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -1470,7 +1470,7 @@
                                 android:minHeight="48dp"/>
                         </LinearLayout>
 
-                        <!-- ✅ РЯД 3: Очистка только истории -->
+
                         <Button
                             android:id="@+id/btnClearHistoryDb"
                             android:layout_width="match_parent"
@@ -1490,7 +1490,7 @@
                             android:gravity="center"
                             android:layout_marginTop="4dp"/>
 
-                        <!-- ✅ НОВОЕ: Разделительная полоска -->
+
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
@@ -1498,7 +1498,7 @@
                             android:layout_marginTop="12dp"
                             android:layout_marginBottom="12dp"/>
 
-                        <!-- ✅ НОВОЕ: Настройки облачного бэкапа (вводятся вручную) -->
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -1580,7 +1580,7 @@
                                 android:padding="10dp"/>
                         </LinearLayout>
 
-                        <!-- ✅ НОВОЕ: РЯД 4: Облачный бэкап -->
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

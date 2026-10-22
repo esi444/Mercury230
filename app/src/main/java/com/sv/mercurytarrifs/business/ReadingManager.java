@@ -22,7 +22,7 @@ public class ReadingManager {
     private double currentT1 = 0, currentT2 = 0, currentTotal = 0;
     private long currentSerial = 0;
 
-    // ✅ НОВОЕ: флаг «занято» — идёт чтение показаний
+    
     private volatile boolean isBusy = false;
 
     public ReadingManager(MainActivity activity, HistoryDatabase dbHelper, LogManager logManager,
@@ -41,13 +41,13 @@ public class ReadingManager {
         this.layoutDateTime = layoutDateTime;
     }
 
-    // ✅ НОВЫЙ МЕТОД: снаружи спрашиваем, идёт ли чтение
+    
     public boolean isBusy() {
         return isBusy;
     }
 
     public void readEnergy(String ip, int port, int addr, Runnable onComplete) {
-        // ✅ НОВОЕ: повторный вызов во время чтения молча игнорируем
+        
         if (isBusy) {
             return;
         }
@@ -90,11 +90,11 @@ public class ReadingManager {
                 logManager.logMsg("   5️⃣ Сумма: " + DateTimeUtils.formatValue(total));
                 Thread.sleep(200);
 
-                // ✅ ЧТЕНИЕ СЕРИЙНОГО НОМЕРА И ДАТЫ ВЫПУСКА
+                
                 byte[] respSerial = socket.sendAndReceive(MercuryCommands.buildReadSerial(addr), 3000);
                 logManager.logMsg("   6️⃣ Серийник HEX: " + bytesToHex(respSerial));
 
-                // ✅ Серийник — прямые байты (БЕЗ BCD)
+                
                 long serial = MercuryParser.parseSerialNumber(respSerial);
                 currentSerial = serial;
                 logManager.logMsg("   6️⃣ Серийник: " + serial);
@@ -121,7 +121,7 @@ public class ReadingManager {
                 logManager.finishLogEntry("Чтение показаний", false, addr, 0);
             } finally {
                 socket.close();
-                isBusy = false; // ✅ НОВОЕ: освобождаем флаг при любом исходе
+                isBusy = false; 
             }
 
             if (onComplete != null) {
@@ -131,7 +131,7 @@ public class ReadingManager {
     }
 
     public void readDateTime(String ip, int port, int addr, Runnable onComplete) {
-        // ✅ НОВОЕ: повторный вызов во время чтения молча игнорируем
+        
         if (isBusy) {
             return;
         }
@@ -180,10 +180,10 @@ public class ReadingManager {
                 logManager.finishLogEntry("Чтение даты/времени", false, addr, 0);
             } finally {
                 socket.close();
-                isBusy = false; // ✅ НОВОЕ: освобождаем флаг при любом исходе
+                isBusy = false; 
             }
 
-            // ✅ ИСПРАВЛЕНО: onComplete теперь вызывается ВСЕГДА (даже при ошибке),
+            
             // иначе кнопка оставалась бы заблокированной
             if (onComplete != null) {
                 activity.runOnUiThread(onComplete);

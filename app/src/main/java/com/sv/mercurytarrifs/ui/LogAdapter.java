@@ -68,30 +68,30 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.ViewHolder> {
         }
 
         void bind(LogEntry entry, OnLogClickListener listener) {
-            // ✅ Разделяем дату и время
+            
             String[] dateTimeParts = entry.timestamp.split(" ");
             String date = dateTimeParts.length > 0 ? dateTimeParts[0] : entry.timestamp;
             String time = dateTimeParts.length > 1 ? dateTimeParts[1] : "";
 
-            // ✅ КОЛОНКА 1: Дата + Время
+            
             tvDate.setText(date);
             tvTime.setText(time);
 
-            // ✅ КОЛОНКА 2: Адрес
+            
             tvAddress.setText(String.format("%03d", entry.address));
 
-            // ✅ КОЛОНКА 3: Источник
+            
             String source = determineSource(entry.messages);
             tvSource.setText(source);
 
-            // ✅ Цветная полоска
+            
             if (entry.success) {
                 colorIndicator.setBackgroundColor(0xFF4CAF50);
             } else {
                 colorIndicator.setBackgroundColor(0xFFF44336);
             }
 
-            // ✅ Кнопка Подробнее
+            
             btnDetails.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onLogClick(entry);

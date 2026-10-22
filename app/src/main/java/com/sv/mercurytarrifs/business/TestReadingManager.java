@@ -35,11 +35,11 @@ public class TestReadingManager {
         this.etAddr = etAddr;
     }
 
-    // ✅ ИСПРАВЛЕНО: ДОБАВЛЕНЫ СЕКУНДЫ
+    
     public void updateDateTime() {
         if (etDateTime != null) {
-            // ✅ БЫЛО: "dd.MM.yyyy HH:mm"
-            // ✅ СТАЛО: "dd.MM.yyyy HH:mm:ss"
+            
+            
             SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault());
             String currentDateTime = sdf.format(new Date());
             etDateTime.setText(currentDateTime);

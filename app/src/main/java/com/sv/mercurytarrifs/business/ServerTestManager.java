@@ -1,4 +1,4 @@
-// pokaz/business/ServerTestManager.java - Тест подключения к серверу
+// pokaz/business/ServerTestManager.java
 
 package com.sv.mercurytarrifs.business;
 
@@ -23,13 +23,13 @@ public class ServerTestManager {
     private final Context context;
     private final LogManager logManager;
     private final TextView tvTestResponse;
-    private final Handler mainHandler;  // ✅ Handler для UI потока
+    private final Handler mainHandler;  
 
     public ServerTestManager(Context context, LogManager logManager, TextView tvTestResponse) {
         this.context = context;
         this.logManager = logManager;
         this.tvTestResponse = tvTestResponse;
-        this.mainHandler = new Handler(Looper.getMainLooper());  // ✅ Инициализация
+        this.mainHandler = new Handler(Looper.getMainLooper());  
     }
 
     public void testServerConnection(String serverUrl, String testUrl) {
@@ -120,7 +120,7 @@ public class ServerTestManager {
 
                         showTestResponse("✅ " + message + "\nPHP: " + phpVersion + " | SQLite: " + sqlite);
 
-                        // ✅ TOAST ЧЕРЕЗ Handler (надёжно!)
+                        
                         showToast("✅ Сервер подключён!");
 
                         logManager.finishLogEntry("Тест подключения", true, 0, 0);
@@ -156,7 +156,7 @@ public class ServerTestManager {
         }).start();
     }
 
-    // ✅ ВСПОМОГАТЕЛЬНЫЙ МЕТОД ДЛЯ TOAST НА UI ПОТОКЕ
+    
     private void showToast(String message) {
         mainHandler.post(() -> Toast.makeText(context, message, Toast.LENGTH_LONG).show());
     }

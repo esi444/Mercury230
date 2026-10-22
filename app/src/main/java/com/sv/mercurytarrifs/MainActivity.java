@@ -277,7 +277,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }
     }
 
-    // ✅ ИСПРАВЛЕНО: onActivityResult теперь корректно закрыт
+    
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -316,7 +316,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                 });
             }).start();
         } else if (requestCode == REQUEST_CODE_IMPORT_SETTINGS) {
-            // ✅ УМНАЯ КНОПКА: определяем тип файла и вызываем соответствующий импорт
+            
             final String fileType = backupManager.readJsonType(uri);
 
             if ("mercury_cloud_config".equals(fileType)) {
@@ -337,7 +337,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
                         .show();
             }
         }
-    } // ✅ ← ЭТА СКОБКА БЫЛА ПРОПУЩЕНА В ВАШЕМ КОДЕ
+    } 
 
     private void performImport(Uri uri) {
         new Thread(() -> {
@@ -372,7 +372,7 @@ public class MainActivity extends AppCompatActivity implements AddressBottomShee
         }).start();
     }
 
-    // ✅ НОВОЕ: выполнение импорта конфига облака
+    
     private void performImportCloudConfig(Uri uri) {
         new Thread(() -> {
             final int result = backupManager.importCloudConfig(uri);

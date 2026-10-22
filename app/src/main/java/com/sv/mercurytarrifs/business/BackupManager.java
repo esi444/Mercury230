@@ -24,7 +24,7 @@ public class BackupManager {
     public static final int IMPORT_INVALID_FILE = 1;
     public static final int IMPORT_ERROR = 2;
 
-    // ✅ НОВОЕ: коды результата импорта конфига облака
+    
     public static final int IMPORT_CLOUD_OK = 10;
     public static final int IMPORT_CLOUD_INVALID = 11;
 
@@ -44,7 +44,7 @@ public class BackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ БАЗА ДАННЫХ
+    
     // ═══════════════════════════════════════
 
     public boolean exportDatabase(Uri destUri) {
@@ -86,7 +86,7 @@ public class BackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ НАСТРОЙКИ
+    
     // ═══════════════════════════════════════
 
     public boolean exportSettings(Uri destUri) {
@@ -209,10 +209,10 @@ public class BackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ НОВОЕ: УМНЫЙ ИМПОРТ КОНФИГА ОБЛАКА
+    
     // ═══════════════════════════════════════
 
-    // ✅ Чтение поля "type" из JSON-файла для определения формата
+    
     public String readJsonType(Uri uri) {
         try {
             InputStream in = context.getContentResolver().openInputStream(uri);
@@ -231,7 +231,7 @@ public class BackupManager {
         }
     }
 
-    // ✅ Импорт конфига облака (только URL + API, БЕЗ пароля)
+    
     public int importCloudConfig(Uri srcUri) {
         try {
             InputStream in = context.getContentResolver().openInputStream(srcUri);
@@ -270,7 +270,7 @@ public class BackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ СЛУЖЕБНЫЕ МЕТОДЫ
+    
     // ═══════════════════════════════════════
 
     private boolean isSqliteFile(Uri uri) {

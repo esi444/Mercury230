@@ -229,7 +229,7 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
                 List<AddressItem> items = dbHelper.getAddressBook();
                 for (AddressItem item : items) {
                     if (item.address == address && item.name != null && !item.name.equals("—")) {
-                        // ✅ Проверяем, не добавлен ли уже этот адрес
+                        
                         boolean alreadyAdded = false;
                         for (AddressNamePair pair : selectedPairs) {
                             if (pair.address == address) {
@@ -283,7 +283,7 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         dialog.show();
     }
 
-    // ✅ НОВЫЙ МЕТОД: отрисовка списка пар (адрес + имя)
+    
     private void updateNamesListUI(LinearLayout container, List<AddressNamePair> pairs) {
         container.removeAllViews();
 
@@ -301,7 +301,7 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
                 row.setGravity(Gravity.CENTER_VERTICAL);
                 row.setPadding(10, 10, 10, 10);
 
-                // ✅ Имя + адрес
+                
                 TextView tvName = new TextView(requireContext());
                 tvName.setText(pair.name + " (адрес: " + pair.address + ")");
                 tvName.setTextColor(0xFF4CAF50);
@@ -326,10 +326,10 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
         }
     }
 
-    // ✅ ИЗМЕНЁННЫЙ класс элемента списка
+    
     public static class AutoReadNetworkItem {
         public String ssid;
-        public List<AddressNamePair> pairs; // ✅ Теперь хранит пары
+        public List<AddressNamePair> pairs; 
 
         public AutoReadNetworkItem(String ssid, List<AddressNamePair> pairs) {
             this.ssid = ssid;
@@ -366,7 +366,7 @@ public class AutoReadBottomSheet extends BottomSheetDialogFragment {
             AutoReadNetworkItem item = items.get(position);
             holder.tvSsid.setText(item.ssid);
 
-            // ✅ Формируем строку из пар
+            
             StringBuilder namesStr = new StringBuilder();
             for (AddressNamePair pair : item.pairs) {
                 if (namesStr.length() > 0) namesStr.append(", ");

@@ -23,7 +23,7 @@ public class SyncManager {
         this.logManager = logManager;
     }
 
-    // ✅ Безопасный показ Toast из любого потока
+    
     private void showToast(String message) {
         new Handler(Looper.getMainLooper()).post(() ->
                 Toast.makeText(context, message, Toast.LENGTH_LONG).show()
@@ -31,7 +31,7 @@ public class SyncManager {
     }
 
     public void syncWithServer(String serverUrl, String apiPath, String deviceKey) {
-        // ✅ Безопасная работа с LogManager
+        
         if (logManager != null) {
             logManager.setCurrentLogMessages(new StringBuilder());
             logManager.logMsg("═══════════════════════════════════════════");
@@ -114,7 +114,7 @@ public class SyncManager {
                     cursor.close();
                 }
 
-                // ✅ ОТМЕЧАЕМ ОТПРАВЛЕННЫЕ ЗАПИСИ
+                
                 if (!syncedIds.isEmpty()) {
                     for (int id : syncedIds) {
                         dbHelper.markAsSynced(id);
@@ -124,7 +124,7 @@ public class SyncManager {
                     }
                 }
 
-                // ✅ ЗАГРУЗКА ИМЁН АБОНЕНТОВ С СЕРВЕРА
+                
                 if (logManager != null) {
                     logManager.logMsg("═══════════════════════════════════════════");
                     logManager.logMsg("👥 Загрузка имён абонентов с сервера...");

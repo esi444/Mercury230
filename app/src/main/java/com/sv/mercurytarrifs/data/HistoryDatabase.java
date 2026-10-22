@@ -12,7 +12,7 @@ import java.util.Map;
 
 public class HistoryDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "history.db";
-    private static final int DATABASE_VERSION = 6; // ✅ НОВОЕ: версия 6 (subscribers)
+    private static final int DATABASE_VERSION = 6; 
 
     private static final String TABLE_HISTORY = "history";
     private static final String COLUMN_ID = "id";
@@ -25,18 +25,18 @@ public class HistoryDatabase extends SQLiteOpenHelper {
     private static final String COLUMN_SYNCED = "synced";
     private static final String COLUMN_CUSTOM_NAME = "custom_name";
 
-    // ✅ Таблицы для автосчитывания
+    
     private static final String TABLE_AUTO_READ_CONFIG = "auto_read_config";
     private static final String TABLE_AUTO_READ_NAMES = "auto_read_names";
 
-    // ✅ НОВАЯ ТАБЛИЦА: абоненты из облачного бэкапа
+    
     private static final String TABLE_SUBSCRIBERS = "subscribers";
 
     public HistoryDatabase(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    // ✅ НОВОЕ: строка таблицы subscribers (облачный бэкап)
+    
     public static class SubscriberRow {
         public final int address;
         public final long serialNumber;
@@ -69,7 +69,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                 "is_enabled INTEGER DEFAULT 1, " +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 
-        // ✅ НОВАЯ СТРУКТУРА: с полем address
+        
         db.execSQL("CREATE TABLE " + TABLE_AUTO_READ_NAMES + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "config_id INTEGER, " +
@@ -78,7 +78,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                 "read_order INTEGER, " +
                 "FOREIGN KEY (config_id) REFERENCES " + TABLE_AUTO_READ_CONFIG + "(id))");
 
-        // ✅ НОВОЕ: таблица абонентов для облачного бэкапа
+        
         db.execSQL("CREATE TABLE " + TABLE_SUBSCRIBERS + " (" +
                 COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COLUMN_ADDRESS + " INTEGER NOT NULL, " +
@@ -108,7 +108,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                     "read_order INTEGER, " +
                     "FOREIGN KEY (config_id) REFERENCES " + TABLE_AUTO_READ_CONFIG + "(id))");
         }
-        // ✅ МИГРАЦИЯ ВЕРСИИ 5: добавляем поле address
+        
         if (oldVersion < 5) {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_AUTO_READ_NAMES + "_backup");
             db.execSQL("ALTER TABLE " + TABLE_AUTO_READ_NAMES + " RENAME TO " + TABLE_AUTO_READ_NAMES + "_backup");
@@ -132,7 +132,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
 
             db.execSQL("DROP TABLE " + TABLE_AUTO_READ_NAMES + "_backup");
         }
-        // ✅ НОВОЕ: МИГРАЦИЯ ВЕРСИИ 6: таблица subscribers для облачного бэкапа
+        
         if (oldVersion < 6) {
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_SUBSCRIBERS + " (" +
                     COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -143,7 +143,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         }
     }
 
-    // ✅ ИСПРАВЛЕНО: имя наследуется от предыдущей записи с тем же серийником
+    
     public void addHistory(int address, long serialNumber, String datetime, double t1, double t2, double total) {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -169,7 +169,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         values.put(COLUMN_T2, t2);
         values.put(COLUMN_TOTAL, total);
         values.put(COLUMN_SYNCED, 0);
-        values.put(COLUMN_CUSTOM_NAME, existingName); // ✅ Используем найденное имя
+        values.put(COLUMN_CUSTOM_NAME, existingName); 
         db.insert(TABLE_HISTORY, null, values);
         db.close();
     }
@@ -225,7 +225,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return db.query(TABLE_HISTORY, null, selection, selectionArgs, null, null, COLUMN_ID + " DESC");
     }
 
-    // ✅ НОВОЕ: единый поиск (имя / адрес / серийник) + диапазон дат (dd.MM.yyyy)
+    
     public Cursor getHistoryUnified(String search, String dateFrom, String dateTo) {
         SQLiteDatabase db = this.getReadableDatabase();
         StringBuilder selection = new StringBuilder();
@@ -258,7 +258,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
                 null, null, COLUMN_ID + " DESC");
     }
 
-    // ✅ dd.MM.yyyy -> yyyyMMdd (для корректного сравнения дат в SQL)
+    
     private String dateToKey(String ddMMyyyy) {
         if (ddMMyyyy == null || ddMMyyyy.length() != 10) return "";
         return ddMMyyyy.substring(6, 10) + ddMMyyyy.substring(3, 5) + ddMMyyyy.substring(0, 2);
@@ -301,7 +301,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return count;
     }
 
-    // ✅ НОВОЕ: полная замена таблицы subscribers (загрузка облачного бэкапа)
+    
     public void replaceSubscribers(List<SubscriberRow> rows) {
         SQLiteDatabase db = this.getWritableDatabase();
         try {
@@ -323,7 +323,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         db.close();
     }
 
-    // ✅ НОВОЕ: адресная книга = история + subscribers (список доступен БЕЗ первого чтения)
+    
     public List<SubscriberRow> getSubscribersUnion() {
         SQLiteDatabase db = this.getReadableDatabase();
         List<SubscriberRow> rows = new ArrayList<>();
@@ -352,7 +352,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return rows;
     }
 
-    // ✅ ИСПРАВЛЕНО: адресная книга строится из union-запроса (история + subscribers)
+    
     public List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> getAddressBook() {
         List<SubscriberRow> rows = getSubscribersUnion();
         List<com.sv.mercurytarrifs.ui.AddressAdapter.AddressItem> list = new ArrayList<>();
@@ -362,7 +362,7 @@ public class HistoryDatabase extends SQLiteOpenHelper {
         return list;
     }
 
-    // ✅ НОВЫЕ МЕТОДЫ ДЛЯ АВТОСЧИТЫВАНИЯ (с адресом)
+    
 
     public void addAutoReadConfig(String ssid, List<AddressNamePair> addressNames) {
         SQLiteDatabase db = this.getWritableDatabase();

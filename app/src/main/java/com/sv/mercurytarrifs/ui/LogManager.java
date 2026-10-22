@@ -21,14 +21,14 @@ public class LogManager {
     private final RecyclerView rvLog;
     private final LogAdapter logAdapter;
     private final ArrayList<LogEntry> logList;
-    private final BottomSheetHelper bottomSheetHelper;  // ✅ ДОБАВЛЕНО
+    private final BottomSheetHelper bottomSheetHelper;  
     private StringBuilder currentLogMessages;
 
     public LogManager(Context context, RecyclerView rvLog, BottomSheetHelper bottomSheetHelper) {
         this.context = context;
         this.rvLog = rvLog;
         this.logList = new ArrayList<>();
-        this.bottomSheetHelper = bottomSheetHelper;  // ✅ СОХРАНЯЕМ
+        this.bottomSheetHelper = bottomSheetHelper;  
 
         rvLog.setLayoutManager(new LinearLayoutManager(context));
         this.logAdapter = new LogAdapter(logList, this::showLogDetails);
@@ -98,7 +98,7 @@ public class LogManager {
         return logList;
     }
 
-    // ✅ ИСПРАВЛЕНО: Открываем BottomSheet вместо Toast
+    
     private void showLogDetails(LogEntry entry) {
         bottomSheetHelper.showLogDetails(entry);
     }

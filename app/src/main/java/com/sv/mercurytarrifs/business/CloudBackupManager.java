@@ -27,7 +27,7 @@ public class CloudBackupManager {
     public static final int RESULT_NOT_FOUND = 2;
     public static final int RESULT_NO_CONNECTION = -1;
     public static final int RESULT_BUILD_ERROR = -2;
-    public static final int RESULT_NOT_CONFIGURED = -3; // ✅ не заполнены URL/API/пароль
+    public static final int RESULT_NOT_CONFIGURED = -3; 
 
     private static final String PAYLOAD_TYPE = "mercury_cloud_backup";
 
@@ -63,7 +63,7 @@ public class CloudBackupManager {
         public int networksCount = 0;
     }
 
-    // ✅ НОВОЕ: читаем настройки облака из prefs (вводятся вручную в аккордеоне)
+    
     // возвращает null, если что-то не заполнено
     private String[] getCloudConfig() {
         String url = prefs.getCloudUrl().trim();
@@ -76,7 +76,7 @@ public class CloudBackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ СОЗДАТЬ БЭКАП: POST в виде HTML-формы
+    
     // ═══════════════════════════════════════
     public int saveToCloud() {
         String[] cfg = getCloudConfig();
@@ -127,7 +127,7 @@ public class CloudBackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ ЗАГРУЗИТЬ БЭКАП
+    
     // ═══════════════════════════════════════
     public LoadResult loadFromCloud() {
         String[] cfg = getCloudConfig();
@@ -187,7 +187,7 @@ public class CloudBackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ ПРИМЕНИТЬ ЗАГРУЖЕННЫЙ БЭКАП
+    
     // ═══════════════════════════════════════
     public boolean applyPayload(JSONObject payload) {
         try {
@@ -221,7 +221,7 @@ public class CloudBackupManager {
                 }
             }
 
-            // ✅ Настройки сервера синхронизации из бэкапа (device_key НЕ трогаем)
+            
             String serverUrl = payload.optString("server_url", "");
             String apiPath = payload.optString("api_path", "");
             String testUrl = payload.optString("test_url", "");
@@ -237,7 +237,7 @@ public class CloudBackupManager {
     }
 
     // ═══════════════════════════════════════
-    // ✅ СБОРКА PAYLOAD
+    
     // ═══════════════════════════════════════
     private JSONObject buildPayload() throws Exception {
         JSONObject root = new JSONObject();
@@ -248,7 +248,7 @@ public class CloudBackupManager {
         meta.put("author", prefs.getDeviceKey());
         root.put("meta", meta);
 
-        // ✅ Настройки сервера синхронизации (чтобы другие телефоны подтянули их)
+        
         root.put("server_url", prefs.getServerUrl());
         root.put("api_path", prefs.getApiPath());
         root.put("test_url", prefs.getTestUrl());

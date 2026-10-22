@@ -18,18 +18,18 @@ import java.util.List;
 public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHolder> {
     private List<HistoryEntry> historyList;
     private final OnHistoryClickListener listener;
-    private OnHistoryDeleteListener deleteListener; // ✅ НОВОЕ: слушатель удаления
+    private OnHistoryDeleteListener deleteListener; 
 
     public interface OnHistoryClickListener {
         void onHistoryClick(HistoryEntry entry);
     }
 
-    // ✅ НОВЫЙ интерфейс: удаление одной записи
+    
     public interface OnHistoryDeleteListener {
         void onHistoryDelete(HistoryEntry entry);
     }
 
-    // ✅ НОВЫЙ метод: установка слушателя удаления
+    
     public void setOnHistoryDeleteListener(OnHistoryDeleteListener listener) {
         this.deleteListener = listener;
     }
@@ -66,7 +66,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
     static class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView tvDate, tvTime, tvAddress, tvSerial, tvName;
         private final Button btnDetails;
-        private final Button btnDelete; // ✅ НОВОЕ
+        private final Button btnDelete; 
         private final View colorIndicator;
 
         ViewHolder(View itemView) {
@@ -77,28 +77,28 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
             tvSerial = itemView.findViewById(R.id.tvSerial);
             tvName = itemView.findViewById(R.id.tvName);
             btnDetails = itemView.findViewById(R.id.btnDetails);
-            btnDelete = itemView.findViewById(R.id.btnDelete); // ✅ НОВОЕ
+            btnDelete = itemView.findViewById(R.id.btnDelete); 
             colorIndicator = itemView.findViewById(R.id.colorIndicator);
         }
 
         void bind(HistoryEntry entry, OnHistoryClickListener listener, OnHistoryDeleteListener deleteListener) {
-            // ✅ Разделяем дату и время
+            
             String[] dateTimeParts = entry.datetime.split(" ");
             String date = dateTimeParts.length > 0 ? dateTimeParts[0] : entry.datetime;
             String time = dateTimeParts.length > 1 ? dateTimeParts[1] : "";
 
-            // ✅ КОЛОНКА 1: Дата + Время
+            
             tvDate.setText(date);
             tvTime.setText(time);
 
-            // ✅ КОЛОНКА 2: Адрес + Серийник
+            
             tvAddress.setText(String.format("%03d", entry.address));
             tvSerial.setText(String.valueOf(entry.serial));
 
-            // ✅ КОЛОНКА 3: Имя абонента
+            
             tvName.setText("👤 " + entry.name);
 
-            // ✅ ИСПРАВЛЕНО: Цветная полоска
+            
             boolean hasNegative = entry.t1 < 0 || entry.t2 < 0 || entry.total < 0;
             boolean allZero = entry.t1 == 0 && entry.t2 == 0 && entry.total == 0;
             if (!hasNegative && !allZero) {
@@ -107,14 +107,14 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
                 colorIndicator.setBackgroundColor(0xFFF44336); // красный
             }
 
-            // ✅ Кнопка Подробнее
+            
             btnDetails.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onHistoryClick(entry);
                 }
             });
 
-            // ✅ НОВОЕ: Кнопка удаления
+            
             btnDelete.setOnClickListener(v -> {
                 if (deleteListener != null) {
                     deleteListener.onHistoryDelete(entry);

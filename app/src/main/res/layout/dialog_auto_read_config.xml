@@ -40,7 +40,7 @@
         android:textColor="#fff"
         android:layout_marginBottom="8dp"/>
 
-    <!-- ✅ СПИСОК ВЫБРАННЫХ ИМЁН С ВОЗМОЖНОСТЬЮ УДАЛЕНИЯ -->
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -61,11 +61,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-            <!-- Сюда будут добавляться имена -->
+
         </LinearLayout>
     </ScrollView>
 
-    <!-- ✅ ИСПРАВЛЕНО: Кнопки в одну строку -->
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

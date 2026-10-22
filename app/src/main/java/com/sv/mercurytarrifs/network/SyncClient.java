@@ -66,7 +66,7 @@ public class SyncClient {
         }
     }
 
-    // ✅ НОВОЕ: Загрузка имён абонентов с сервера
+    
     public static Map<Long, String> getSubscriberNames(String serverUrl, String apiPath, String deviceKey) {
         try {
             String fullUrl = serverUrl + apiPath + "?device_key=" + URLEncoder.encode(deviceKey, "UTF-8");
@@ -98,10 +98,10 @@ public class SyncClient {
 
             String responseStr = response.toString();
 
-            // ✅ Лог для отладки
+            
             android.util.Log.d("SyncClient", "Ответ сервера: " + responseStr);
 
-            // ✅ Парсим JSON
+            
             JSONObject json = new JSONObject(responseStr);
             if (json.optBoolean("success", false)) {
                 JSONArray data = json.optJSONArray("data");
@@ -109,7 +109,7 @@ public class SyncClient {
                 if (data != null) {
                     for (int i = 0; i < data.length(); i++) {
                         JSONObject subscriber = data.getJSONObject(i);
-                        // ✅ Получаем серийный номер (может быть String или Long)
+                        
                         String serialStr = subscriber.optString("serial_number", "0");
                         long serial = 0;
                         try {

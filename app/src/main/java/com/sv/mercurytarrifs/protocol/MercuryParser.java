@@ -12,13 +12,13 @@ public class MercuryParser {
     public static long parseSerialNumber(byte[] resp) {
         if (resp == null || resp.length < 8) return 0;
         try {
-            // ✅ ПРЯМЫЕ ЗНАЧЕНИЯ БАЙТОВ — БЕЗ BcdUtils!
+            
             int b0 = resp[1] & 0xFF;
             int b1 = resp[2] & 0xFF;
             int b2 = resp[3] & 0xFF;
             int b3 = resp[4] & 0xFF;
 
-            // ✅ %02d гарантирует 2 цифры с ведущими нулями
+            
             String serial = String.format(Locale.US, "%02d%02d%02d%02d", b0, b1, b2, b3);
 
             return Long.parseLong(serial);
@@ -76,17 +76,17 @@ public class MercuryParser {
     public static String parseDateTime(byte[] resp) {
         if (resp == null || resp.length < 9) return "🕐 Ошибка";
         try {
-            // ✅ ПРАВИЛЬНЫЕ ИНДЕКСЫ (по данным логов):
-            int second = BcdUtils.bcdToDec(resp[1] & 0xFF);   // ✅ Байт 1 = секунды
-            int minute = BcdUtils.bcdToDec(resp[2] & 0xFF);   // ✅ Байт 2 = минуты
-            int hour = BcdUtils.bcdToDec(resp[3] & 0xFF);     // ✅ Байт 3 = часы
-            int dayOfWeek = resp[4] & 0xFF;                   // ✅ Байт 4 = день недели (01-07)
-            int day = BcdUtils.bcdToDec(resp[5] & 0xFF);      // ✅ Байт 5 = день
-            int month = BcdUtils.bcdToDec(resp[6] & 0xFF);    // ✅ Байт 6 = месяц
-            int year = BcdUtils.bcdToDec(resp[7] & 0xFF);     // ✅ Байт 7 = год
+            
+            int second = BcdUtils.bcdToDec(resp[1] & 0xFF);   
+            int minute = BcdUtils.bcdToDec(resp[2] & 0xFF);   
+            int hour = BcdUtils.bcdToDec(resp[3] & 0xFF);     
+            int dayOfWeek = resp[4] & 0xFF;                   
+            int day = BcdUtils.bcdToDec(resp[5] & 0xFF);      
+            int month = BcdUtils.bcdToDec(resp[6] & 0xFF);    
+            int year = BcdUtils.bcdToDec(resp[7] & 0xFF);     
             int fullYear = (year < 50) ? 2000 + year : 1900 + year;
 
-            // ✅ ВАРИАНТ B: Добавляем день недели в вывод
+            
             String dayOfWeekStr = getDayOfWeekName(dayOfWeek);
 
             return String.format(Locale.getDefault(), "🕐 %02d.%02d.%04d %02d:%02d:%02d (%s)",

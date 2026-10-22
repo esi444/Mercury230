@@ -35,7 +35,7 @@ public class AppPreferences {
     private static final String KEY_AUTO_SYNC_PERIOD = "auto_sync_period";
     private static final String KEY_AUTO_SYNC_ENABLED = "auto_sync_enabled";
 
-    // ✅ НОВОЕ: настройки облачного бэкапа (вводятся вручную, пустые по умолчанию)
+    
     private static final String KEY_CLOUD_URL = "cloud_url";
     private static final String KEY_CLOUD_API = "cloud_api";
     private static final String KEY_CLOUD_PASSWORD = "cloud_password";
@@ -45,7 +45,7 @@ public class AppPreferences {
     private static final int DEFAULT_ADDRESS = 1;
     private static final int DEFAULT_AUTO_READ_INTERVAL = 200;
 
-    // ✅ ПУСТЫЕ по умолчанию (подтянутся из облачного бэкапа или вводятся вручную)
+    
     private static final String DEFAULT_SERVER_URL = "";
     private static final String DEFAULT_API_PATH = "";
     private static final String DEFAULT_TEST_URL = "";
@@ -74,7 +74,7 @@ public class AppPreferences {
     public String getTestUrl() { return prefs.getString(KEY_TEST_URL, DEFAULT_TEST_URL); }
     public void setTestUrl(String url) { prefs.edit().putString(KEY_TEST_URL, url).apply(); }
 
-    // ✅ device_key генерируется автоматически при первом обращении (UUID)
+    
     public String getDeviceKey() {
         String key = prefs.getString(KEY_DEVICE_KEY, null);
         if (key == null || key.isEmpty()) {
@@ -85,7 +85,7 @@ public class AppPreferences {
     }
     public void setDeviceKey(String key) { prefs.edit().putString(KEY_DEVICE_KEY, key).apply(); }
 
-    // ✅ НОВОЕ: настройки облачного бэкапа
+    
     public String getCloudUrl() { return prefs.getString(KEY_CLOUD_URL, ""); }
     public void setCloudUrl(String url) { prefs.edit().putString(KEY_CLOUD_URL, url).apply(); }
 

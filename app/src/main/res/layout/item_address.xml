@@ -9,7 +9,7 @@
     android:clickable="true"
     android:focusable="true">
 
-    <!-- 👤 ИМЯ (занимает 40% ширины, текст по центру) -->
+
     <LinearLayout
         android:layout_width="0dp"
         android:layout_weight="2"
@@ -38,7 +38,7 @@
             android:maxLines="1"/>
     </LinearLayout>
 
-    <!-- 📍 АДРЕС (занимает 30% ширины, текст по центру) -->
+
     <LinearLayout
         android:layout_width="0dp"
         android:layout_weight="1.5"
@@ -65,7 +65,7 @@
             android:textSize="13sp"/>
     </LinearLayout>
 
-    <!-- 🔢 СЕРИЙНИК (занимает 30% ширины, текст по центру) -->
+
     <LinearLayout
         android:layout_width="0dp"
         android:layout_weight="1.5"

@@ -51,7 +51,7 @@ public class AutoReadManager {
         if (isReading && currentSsid != null && currentSsid.equals(ssid)) return;
         if (isReading && (currentSsid == null || !currentSsid.equals(ssid))) stopReading();
 
-        // ✅ НОВОЕ: если идёт ручное чтение — откладываем старт прохода, не мешаем
+        
         if (readingManager.isBusy()) {
             mainHandler.postDelayed(this::checkAndStartAutoRead, 1000);
             return;
@@ -71,14 +71,14 @@ public class AutoReadManager {
         successNames.setLength(0);
         failNames.setLength(0);
 
-        // ✅ НОВОЕ: визуально блокируем кнопки ручного чтения на весь проход
+        
         activity.runOnUiThread(() -> activity.setReadButtonsLocked(true));
 
         readNextItem();
     }
 
     private void readNextItem() {
-        // ✅ НОВОЕ: проход остановлен — выходим (защита от отложенных задач)
+        
         if (!isReading) return;
 
         if (currentIndex >= itemsToRead.size()) {
@@ -86,7 +86,7 @@ public class AutoReadManager {
             return;
         }
 
-        // ✅ НОВОЕ: если занято ручным чтением — ждём и повторяем шаг,
+        
         // НЕ запускаем второе параллельное чтение
         if (readingManager.isBusy()) {
             mainHandler.postDelayed(this::readNextItem, 500);
@@ -117,7 +117,7 @@ public class AutoReadManager {
     private void finishReading() {
         isReading = false;
 
-        // ✅ НОВОЕ: разблокируем кнопки, если нет ручного чтения
+        
         activity.runOnUiThread(() -> {
             if (!readingManager.isBusy()) {
                 activity.setReadButtonsLocked(false);
@@ -149,7 +149,7 @@ public class AutoReadManager {
         currentSsid = null;
         itemsToRead = null;
 
-        // ✅ НОВОЕ: разблокируем кнопки, если нет ручного чтения
+        
         activity.runOnUiThread(() -> {
             if (!readingManager.isBusy()) {
                 activity.setReadButtonsLocked(false);

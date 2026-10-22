@@ -1,12 +1,12 @@
 package com.sv.mercurytarrifs.data;
 
 public class HistoryEntry {
-    public long id = -1;  // ✅ НОВОЕ: ID строки в БД (нужен для удаления)
+    public long id = -1;  
     public int address;
     public long serial;
     public String datetime;
     public double t1, t2, total;
-    public String name;  // ✅ ПОЛЕ: Имя абонента
+    public String name;  
 
     public HistoryEntry(int address, long serial, String datetime, double t1, double t2, double total) {
         this.address = address;
@@ -15,7 +15,7 @@ public class HistoryEntry {
         this.t1 = t1;
         this.t2 = t2;
         this.total = total;
-        this.name = "—";  // ✅ По умолчанию прочерк
+        this.name = "—";  
     }
 
     public HistoryEntry(int address, long serial, String datetime, double t1, double t2, double total, String name) {
@@ -28,7 +28,7 @@ public class HistoryEntry {
         this.name = (name != null && !name.isEmpty()) ? name : "—";
     }
 
-    // ✅ НОВЫЙ конструктор с id строки БД
+    
     public HistoryEntry(long id, int address, long serial, String datetime, double t1, double t2, double total, String name) {
         this.id = id;
         this.address = address;
